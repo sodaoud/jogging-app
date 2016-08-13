@@ -11,6 +11,7 @@ var Mongo *mgo.Session
 
 //Connect create Connectios to mongoDb
 func Connect() {
+
 	log.Println("Connection to database")
 	var err error
 	Mongo, err = mgo.Dial("localhost")
