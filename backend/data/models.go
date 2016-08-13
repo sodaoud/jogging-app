@@ -10,13 +10,25 @@ import (
 type Track struct {
 	ID           bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Date         time.Time     `json:"date"`
+	Distance     int           `json:"distance"`
 	Time         int           `json:"time"` // time in seconds
-	AverageSpeed float32       `json:"avgSpd"`
-	UserID       string        `json:"userid"`
+	AverageSpeed float32       `json:"average_speed"`
+	UserID       bson.ObjectId `json:"userid"`
 }
 
-// Tracks is a slice of Track
-type Tracks []Track
+// Validate the track
+func (t *Track) Validate() (bool, string) {
+	if t.Date.After(time.Now()) {
+		return false, "Invalid date"
+	}
+	if t.Time <= 0 {
+		return false, "time must be greater than 0"
+	}
+	if t.Distance <= 0 {
+		return false, "distance must be greater than 0"
+	}
+	return true, ""
+}
 
 // UserRole declaration
 const UserRole string = "USER"
