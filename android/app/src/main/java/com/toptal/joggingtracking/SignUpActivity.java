@@ -40,13 +40,6 @@ import okhttp3.ResponseBody;
  */
 public class SignUpActivity extends AppCompatActivity {
 
-    public static final String ACCOUNT_TYPE = "ACCOUNT_TYPE";
-    //    public static final String ADDING_NEW_ACCOUNT = "ADDING_NEW_ACCOUNT";
-    public static final String AUTH_TYPE = "AUTH_TYPE";
-    public static final String ACCOUNT_NAME = "ACCOUNT_NAME";
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
     private UserLoginTask mAuthTask = null;
 
     // UI references.
@@ -61,7 +54,7 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_sign_up);
 
         mAccountAuthenticatorResponse =
                 getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
@@ -173,10 +166,6 @@ public class SignUpActivity extends AppCompatActivity {
 
     }
 
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
     public class UserLoginTask extends AsyncTask<Void, Void, Response> {
 
         private final String mUsername;
@@ -193,9 +182,12 @@ public class SignUpActivity extends AppCompatActivity {
             try {
                 obj.put("username", mUsername);
                 obj.put("password", mPassword);
+                obj.put("password", mPassword);
+                obj.put("password", mPassword);
+                obj.put("password", mPassword);
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toString());
                 Request request = new Request.Builder()
-                        .url(ConstantUtil.URL_LOGIN)
+                        .url(ConstantUtil.URL_SIGN_UP)
                         .post(body)
                         .build();
                 return client.newCall(request).execute();

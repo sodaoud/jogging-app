@@ -5,4 +5,5 @@ package com.toptal.joggingtracking.datatype;
  */
 
 public class User {
+
 }
