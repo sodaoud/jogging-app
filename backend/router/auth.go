@@ -33,14 +33,20 @@ type userDto struct {
 	Password string `json:"password"`
 }
 
-func (u *userDto) validate() (bool, string) {
+func (u *userDto) validate() (bool, *errorDto) {
 	if len([]rune(u.Username)) < 6 {
-		return false, "Username must contain at least 6 characters"
+		return false, &errorDto{
+			Error:   "USERNAME_ERROR",
+			Message: "Username must contain at least 6 characters",
+		}
 	}
 	if len([]rune(u.Password)) < 6 {
-		return false, "Password must contain at least 6 characters"
+		return false, &errorDto{
+			Error:   "PASSWORD_ERROR",
+			Message: "Password must contain at least 6 characters",
+		}
 	}
-	return true, ""
+	return true, nil
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -157,9 +163,9 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error Unmarshal", error)
 		return
 	}
-	if b, mes := u.validate(); b == false {
+	if b, dto := u.validate(); b == false {
 		w.WriteHeader(422)
-		w.Write([]byte(mes))
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
 	password := []byte(u.Password)
@@ -189,7 +195,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		if err := c.Find(bson.M{"username": u.Username}).One(&user); err == nil {
 			w.WriteHeader(http.StatusConflict)
 			dto := errorDto{
-				Error:   "USERNAME_EXISTS",
+				Error:   "USERNAME_ERROR",
 				Message: "The username " + user.Username + " is already used, please choose another username",
 			}
 			json.NewEncoder(w).Encode(dto)

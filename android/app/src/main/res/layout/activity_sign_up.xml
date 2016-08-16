@@ -56,8 +56,6 @@
                     android:imeActionId="@+id/login"
                     android:imeOptions="actionUnspecified"
                     android:maxLines="1"
-                    app:drawable_hide="@drawable/ic_visibility"
-                    app:drawable_show="@drawable/ic_visibility_off"
                     app:tint_color="@color/colorAccent"/>
 
             </android.support.design.widget.TextInputLayout>

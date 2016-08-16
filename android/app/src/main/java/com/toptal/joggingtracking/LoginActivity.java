@@ -5,6 +5,7 @@ import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -252,7 +253,9 @@ public class LoginActivity extends AppCompatActivity {
         if (mAccountAuthenticatorResponse != null) {
             mAccountAuthenticatorResponse.onResult(mResultBundle);
         }
-        setResult(RESULT_OK, null);
+        Intent i = new Intent();
+        i.putExtras(mResultBundle);
+        setResult(RESULT_OK, i);
         finish();
     }
 

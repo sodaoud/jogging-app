@@ -4,13 +4,16 @@ import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
 import com.toptal.joggingtracking.auth.AccountGeneral;
+import com.toptal.joggingtracking.util.ConstantUtil;
 
 public class WelcomeActivity extends AppCompatActivity {
 
@@ -21,11 +24,12 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_welcome);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
-            Account[] accounts = AccountManager.get(getBaseContext()).getAccountsByType(AccountGeneral.ACCOUNT_TYPE);
-            if (accounts.length > 0) {
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
-            }
+            return;
+        }
+        Account[] accounts = AccountManager.get(getBaseContext()).getAccountsByType(AccountGeneral.ACCOUNT_TYPE);
+        if (accounts.length > 0) {
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
         }
     }
 
@@ -43,6 +47,10 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 123 && resultCode == RESULT_OK) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(ConstantUtil.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
+            editor.apply(); // TODO test if main activity launches before the commit
             startActivity(new Intent(this, MainActivity.class));
         }
     }

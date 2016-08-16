@@ -5,6 +5,7 @@ import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -16,9 +17,10 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.toptal.joggingtracking.auth.AccountGeneral;
+import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.TokenUtil;
 import com.toptal.joggingtracking.util.ConstantUtil;
 
@@ -32,7 +34,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 
 /**
@@ -202,21 +203,31 @@ public class SignUpActivity extends AppCompatActivity {
             showProgress(false);
 
             if (response != null) {
-                Gson gson = new Gson();
-                ResponseBody body = response.body();
-                if (response.code() == 200) {
-                    try {
-                        TokenUtil tu = gson.fromJson(body.string(), TokenUtil.class);
-                        finishLogin(tu, mUsername, mPassword);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        // TODO show error to the user
-                    }
+                String bodyString = null;
+                try {
+                    bodyString = response.body().string();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(SignUpActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
+                }
+                if (response.code() == 201) {
+                    TokenUtil tu = TokenUtil.getFromString(bodyString);
+                    finishLogin(tu, mUsername, mPassword);
                 } else {
-                    // TODO show error to the user
+                    ErrorUtil err = ErrorUtil.getFromString(bodyString);
+                    switch (err.getError()) {
+                        case "USERNAME_ERROR":
+                            mUsernameView.setError(err.getMessage());
+                            break;
+                        case "PASSWORD_ERROR":
+                            mPasswordView.setError(err.getMessage());
+                            break;
+                        default:
+                            Toast.makeText(SignUpActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
+                    }
                 }
             } else {
-                // TODO show error to the user
+                Toast.makeText(SignUpActivity.this, "The server is not responding, please try again later", Toast.LENGTH_LONG).show();
             }
         }
 
@@ -241,7 +252,9 @@ public class SignUpActivity extends AppCompatActivity {
         if (mAccountAuthenticatorResponse != null) {
             mAccountAuthenticatorResponse.onResult(mResultBundle);
         }
-        setResult(RESULT_OK, null);
+        Intent i = new Intent();
+        i.putExtras(mResultBundle);
+        setResult(RESULT_OK, i);
         finish();
     }
 
