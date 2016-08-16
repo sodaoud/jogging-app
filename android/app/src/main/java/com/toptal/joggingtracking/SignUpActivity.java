@@ -182,9 +182,6 @@ public class SignUpActivity extends AppCompatActivity {
             try {
                 obj.put("username", mUsername);
                 obj.put("password", mPassword);
-                obj.put("password", mPassword);
-                obj.put("password", mPassword);
-                obj.put("password", mPassword);
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toString());
                 Request request = new Request.Builder()
                         .url(ConstantUtil.URL_SIGN_UP)
@@ -205,10 +202,10 @@ public class SignUpActivity extends AppCompatActivity {
             showProgress(false);
 
             if (response != null) {
+                Gson gson = new Gson();
                 ResponseBody body = response.body();
                 if (response.code() == 200) {
                     try {
-                        Gson gson = new Gson();
                         TokenUtil tu = gson.fromJson(body.string(), TokenUtil.class);
                         finishLogin(tu, mUsername, mPassword);
                     } catch (IOException e) {

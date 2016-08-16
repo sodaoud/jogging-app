@@ -45,10 +45,15 @@ func (u *userDto) validate() (bool, string) {
 
 func login(w http.ResponseWriter, r *http.Request) {
 	var u userDto
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	error := json.NewDecoder(r.Body).Decode(&u)
 	if error != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Unmarshal Error"))
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: error.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
 	if data.CheckConnection() {
@@ -60,12 +65,20 @@ func login(w http.ResponseWriter, r *http.Request) {
 		err := c.Find(bson.M{"username": u.Username}).One(&user)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Wrong username"))
+			dto := errorDto{
+				Error:   "WRONG_USERNAME",
+				Message: "The username does not exist",
+			}
+			json.NewEncoder(w).Encode(dto)
 			return
 		}
 		if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Wrong password"))
+			dto := errorDto{
+				Error:   "WRONG_PASSWORD",
+				Message: "The password enterend does not match with the username",
+			}
+			json.NewEncoder(w).Encode(dto)
 			return
 		}
 		expireToken := time.Now().Add(time.Hour * 24).Unix()
@@ -92,13 +105,21 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := json.NewEncoder(w).Encode(t); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			dto := errorDto{
+				Error:   "JSON_ERROR",
+				Message: err.Error(),
+			}
+			json.NewEncoder(w).Encode(dto)
 			log.Println("Json encoding Error", err)
 			return
 		}
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
+		dto := errorDto{
+			Error:   "DATABASE_ERROR",
+			Message: "Can not connect to database",
+		}
+		json.NewEncoder(w).Encode(dto)
 		log.Println("Database Error")
 		return
 	}
@@ -124,10 +145,15 @@ func auth(protectedPage http.HandlerFunc) http.HandlerFunc {
 
 func signup(w http.ResponseWriter, r *http.Request) {
 	var u userDto
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	error := json.NewDecoder(r.Body).Decode(&u)
 	if error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(error.Error()))
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: error.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		log.Println("Error Unmarshal", error)
 		return
 	}
@@ -142,7 +168,11 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(error.Error()))
+		dto := errorDto{
+			Error:   "BCRYPT_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		log.Println("Error can not bcrypt password", error)
 		return
 	}
@@ -156,25 +186,70 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 		defer session.Close()
 		c := session.DB("test").C("user")
+		if err := c.Find(bson.M{"username": u.Username}).One(&user); err == nil {
+			w.WriteHeader(http.StatusConflict)
+			dto := errorDto{
+				Error:   "USERNAME_EXISTS",
+				Message: "The username " + user.Username + " is already used, please choose another username",
+			}
+			json.NewEncoder(w).Encode(dto)
+			return
+		}
 		index := mgo.Index{
 			Key:    []string{"username"},
 			Unique: true,
 		}
-		if err := c.EnsureIndex(index); err != nil { // TODO test if this works
-			w.WriteHeader(http.StatusConflict)
-			w.Write([]byte(err.Error()))
-			return
-		}
+		c.EnsureIndex(index)
 		err := c.Insert(user)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			dto := errorDto{
+				Error:   "INSERT_NOT_POSSIBLE",
+				Message: err.Error(),
+			}
+			json.NewEncoder(w).Encode(dto)
 			log.Println("Error insert user in Database", err)
+			return
+		}
+
+		expireToken := time.Now().Add(time.Hour * 24).Unix()
+
+		claims := customClaims{
+			user.Username,
+			user.Roles,
+			user.ID,
+			jwt.StandardClaims{
+				ExpiresAt: expireToken,
+				Issuer:    "toptal.com",
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+		signedToken, _ := token.SignedString([]byte("my-secret"))
+
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusCreated)
+		t := render{
+			Token: signedToken,
+			Roles: user.Roles,
+		}
+		if err := json.NewEncoder(w).Encode(t); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			dto := errorDto{
+				Error:   "JSON_ERROR",
+				Message: err.Error(),
+			}
+			json.NewEncoder(w).Encode(dto)
 			return
 		}
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		dto := errorDto{
+			Error:   "DATABASE_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		log.Println("Database Error", err)
 		return
 	}

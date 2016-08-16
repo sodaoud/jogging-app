@@ -12,3 +12,8 @@ func New() *mux.Router {
 	r.HandleFunc("/login", login).Methods("POST")
 	return r
 }
+
+type errorDto struct {
+	Message string `json:"message"`
+	Error   string `json:"error"`
+}
