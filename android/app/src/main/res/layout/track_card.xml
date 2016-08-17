@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="Date" />
+
+        <TextView
+            android:id="@+id/date_field"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:layout_toRightOf="@id/date"
+            android:text="13/03/2012" />
+
+        <TextView
+            android:id="@+id/duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/date"
+            android:layout_margin="5dp"
+            android:text="Time" />
+
+        <TextView
+            android:id="@+id/duration_field"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/date"
+            android:layout_margin="5dp"
+            android:layout_toRightOf="@id/duration"
+            android:text="23:23" />
+
+        <TextView
+            android:id="@+id/distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/duration"
+            android:layout_margin="5dp"
+            android:text="Distance" />
+
+        <TextView
+            android:id="@+id/distance_field"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/duration"
+            android:layout_margin="5dp"
+            android:layout_toRightOf="@id/distance"
+            android:text="4km" />
+
+        <TextView
+            android:id="@+id/speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/distance"
+            android:layout_margin="5dp"
+            android:text="Speed" />
+
+        <TextView
+            android:id="@+id/speed_field"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/distance"
+            android:layout_margin="5dp"
+            android:layout_toRightOf="@id/speed"
+            android:text="18km/h" />
+    </RelativeLayout>
+</android.support.v7.widget.CardView>

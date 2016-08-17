@@ -9,9 +9,9 @@ import java.util.Date;
 public class Track {
     private Date date;
     private int duration;
+    private float speed;
     private int distance;
     private String userid;
-
     public Track(int duration, int distance) {
         this.duration = duration;
         this.distance = distance;
@@ -54,4 +54,13 @@ public class Track {
     public void setUserid(String userid) {
         this.userid = userid;
     }
+
+    public float getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
+    }
+
 }

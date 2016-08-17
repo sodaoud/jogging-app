@@ -5,6 +5,8 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,6 +16,9 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -21,14 +26,18 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.toptal.joggingtracking.fragments.JoggingFragment;
+import com.toptal.joggingtracking.fragments.ReportFragment;
 import com.toptal.joggingtracking.util.ConstantUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private static final int REQ_LOGIN = 237;
     private Account account;
     private AccountManager am;
+    private String shownFragmentTag = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +66,13 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        NavigationView navView = ((NavigationView) findViewById(R.id.nav_view));
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment fragment = JoggingFragment.newInstance();
+        shownFragmentTag = String.valueOf(R.id.nav_list);
+        fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+        navView.setCheckedItem(R.id.nav_list);
 
         am = AccountManager.get(this);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
@@ -64,7 +81,7 @@ public class MainActivity extends AppCompatActivity
             getAccountOrBackToWelcomeActivity();
         }
 
-        View header = ((NavigationView) findViewById(R.id.nav_view)).getHeaderView(0);
+        View header = navView.getHeaderView(0);
         header.findViewById(R.id.username).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -74,16 +91,16 @@ public class MainActivity extends AppCompatActivity
                     return;
                 }
                 b.setTitle("Change account");
-                final Account[] accounts = am.getAccounts();
+                Account[] accounts = am.getAccounts();
                 if (accounts.length > 1) {
-                    List<Account> list = new ArrayList<>(Arrays.asList(accounts));
+                    final List<Account> list = new ArrayList<>(Arrays.asList(accounts));
                     list.remove(account);
                     ArrayAdapter<Account> adapter = new AccountAdapter(list);
                     b.setAdapter(adapter, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             PreferenceManager.getDefaultSharedPreferences(MainActivity.this)
-                                    .edit().putString(ConstantUtil.USER_PREF, accounts[which].name)
+                                    .edit().putString(ConstantUtil.USER_PREF, list.get(which).name)
                                     .apply();
 
                             Intent intent = getIntent();
@@ -117,6 +134,11 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return true;
     }
 
     @Override
@@ -176,13 +198,32 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
-        if (id == R.id.nav_list) {
-            // Handle the camera action
-        } else if (id == R.id.nav_params) {
-
+        String tag = String.valueOf(id);
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment fragment = fragmentManager.findFragmentByTag(tag);
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        if (shownFragmentTag != null) {
+            Fragment toHide = fragmentManager.findFragmentByTag(shownFragmentTag);
+            transaction.hide(toHide);
         }
+        if (fragment == null) {
+            if (id == R.id.nav_list) {
+                fragment = JoggingFragment.newInstance();
+            } else if (id == R.id.nav_chart) {
+                fragment = ReportFragment.newInstance();
+//                fragment = ChequebooksFragment.newInstance();
+            } else if (id == R.id.nav_params) {
+//                fragment = LanguagesFragment.newInstance();
+//            } else if (id == R.id.other_services) {
+//                fragment = OtherServicesFragment.newInstance();
+            }
+            transaction.add(R.id.container, fragment, tag);
+        } else {
+            transaction.show(fragment);
+        }
+        transaction.commit();
 
+        shownFragmentTag = tag;
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
@@ -216,5 +257,16 @@ public class MainActivity extends AppCompatActivity
 
         View header = ((NavigationView) findViewById(R.id.nav_view)).getHeaderView(0);
         ((TextView) header.findViewById(R.id.username)).setText(account.name);
+    }
+
+    public String getAuthToken() {
+        String token = null;
+        try {
+            token = am.blockingGetAuthToken(account, "Bearer", false);
+        } catch (OperationCanceledException | IOException | AuthenticatorException e) {
+            e.printStackTrace();
+        }
+
+        return "Bearer " + token;
     }
 }

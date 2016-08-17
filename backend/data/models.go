@@ -11,8 +11,8 @@ type Track struct {
 	ID           bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Date         time.Time     `json:"date"`
 	Distance     int           `json:"distance"`
-	Time         int           `json:"time"` // time in seconds
-	AverageSpeed float32       `json:"average_speed"`
+	Time         int           `json:"duration"` // time in seconds
+	AverageSpeed float32       `json:"speed"`
 	UserID       bson.ObjectId `json:"userid"`
 }
 
