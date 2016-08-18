@@ -72,7 +72,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			dto := errorDto{
-				Error:   "WRONG_USERNAME",
+				Error:   "USERNAME_ERROR",
 				Message: "The username does not exist",
 			}
 			json.NewEncoder(w).Encode(dto)
@@ -81,7 +81,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			dto := errorDto{
-				Error:   "WRONG_PASSWORD",
+				Error:   "PASSWORD_ERROR",
 				Message: "The password enterend does not match with the username",
 			}
 			json.NewEncoder(w).Encode(dto)
@@ -183,6 +183,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := data.User{
+		ID:       bson.NewObjectId(),
 		Username: u.Username,
 		Password: hashedPassword,
 		Roles:    []string{data.UserRole},

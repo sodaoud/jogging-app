@@ -1,6 +1,5 @@
 package com.toptal.joggingtracking;
 
-import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.animation.Animator;
@@ -17,11 +16,12 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.auth.AccountGeneral;
+import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.TokenUtil;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,7 +33,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 
 /**
@@ -56,7 +55,6 @@ public class LoginActivity extends AppCompatActivity {
     private View mProgressView;
     private View mLoginFormView;
     private OkHttpClient client;
-    private AccountManager mAccountManager;
     private AccountAuthenticatorResponse mAccountAuthenticatorResponse;
 
     @Override
@@ -98,7 +96,6 @@ public class LoginActivity extends AppCompatActivity {
 
         client = new OkHttpClient();
 
-        mAccountManager = AccountManager.get(getBaseContext());
     }
 
     private void attemptLogin() {
@@ -196,7 +193,7 @@ public class LoginActivity extends AppCompatActivity {
                 obj.put("password", mPassword);
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toString());
                 Request request = new Request.Builder()
-                        .url(ConstantUtil.URL_LOGIN)
+                        .url(Util.URL_LOGIN)
                         .post(body)
                         .build();
                 return client.newCall(request).execute();
@@ -214,21 +211,40 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
 
             if (response != null) {
-                ResponseBody body = response.body();
+                String bodyString = null;
+                try {
+                    bodyString = response.body().string();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(LoginActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
+                }
                 if (response.code() == 200) {
-                    try {
-                        Gson gson = new Gson();
-                        TokenUtil tu = gson.fromJson(body.string(), TokenUtil.class);
-                        finishLogin(tu, mUsername, mPassword);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        // TODO show error to the user
+                    Gson gson = new Gson();
+                    TokenUtil tu = gson.fromJson(bodyString, TokenUtil.class);
+                    Bundle mResultBundle = Util.finishLogin(LoginActivity.this, tu, mUsername, mPassword);
+                    if (mAccountAuthenticatorResponse != null) {
+                        mAccountAuthenticatorResponse.onResult(mResultBundle);
                     }
+                    Intent i = new Intent();
+                    i.putExtras(mResultBundle);
+                    setResult(RESULT_OK, i);
+                    finish();
+
                 } else {
-                    // TODO show error to the user
+                    ErrorUtil err = ErrorUtil.getFromString(bodyString);
+                    switch (err.getError()) {
+                        case "USERNAME_ERROR":
+                            mUsernameView.setError(err.getMessage());
+                            break;
+                        case "PASSWORD_ERROR":
+                            mPasswordView.setError(err.getMessage());
+                            break;
+                        default:
+                            Toast.makeText(LoginActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
+                    }
                 }
             } else {
-                // TODO show error to the user
+                Toast.makeText(LoginActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
             }
         }
 
@@ -237,36 +253,6 @@ public class LoginActivity extends AppCompatActivity {
             mAuthTask = null;
             showProgress(false);
         }
-    }
-
-    private void finishLogin(TokenUtil tu, String mUsername, String mPassword) {
-
-        final Account account = new Account(mUsername, AccountGeneral.ACCOUNT_TYPE);
-
-        mAccountManager.addAccountExplicitly(account, mPassword, getRolesBundle(tu.getRoles()));
-        mAccountManager.setAuthToken(account, "Bearer", tu.getToken());
-
-        Bundle mResultBundle = new Bundle();
-        mResultBundle.putString(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        mResultBundle.putString(AccountManager.KEY_AUTHTOKEN, tu.getToken());
-
-        if (mAccountAuthenticatorResponse != null) {
-            mAccountAuthenticatorResponse.onResult(mResultBundle);
-        }
-        Intent i = new Intent();
-        i.putExtras(mResultBundle);
-        setResult(RESULT_OK, i);
-        finish();
-    }
-
-    private Bundle getRolesBundle(String[] roles) {
-        Bundle b = new Bundle();
-        for (String role : roles) {
-            if (role.equals(AccountGeneral.ADMIN)) b.putString(AccountGeneral.ADMIN, "admin");
-            if (role.equals(AccountGeneral.MANAGER)) b.putString(AccountGeneral.MANAGER, "manager");
-            if (role.equals(AccountGeneral.USER)) b.putString(AccountGeneral.USER, "user");
-        }
-        return b;
     }
 }
 

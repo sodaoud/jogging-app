@@ -2,8 +2,10 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"gopkg.in/mgo.v2/bson"
 
@@ -14,16 +16,39 @@ import (
 )
 
 func getTracks(w http.ResponseWriter, r *http.Request) {
-	// begin := r.URL.Query().Get("begin")
-	// end := r.URL.Query().Get("end")
-	// sort := r.URL.Query().Get("sort")
+	var begin *time.Time
+	var end *time.Time
+	var sort *string
+	if tmp, err := time.Parse(time.RFC3339, r.URL.Query().Get("begin")); err == nil {
+		begin = &tmp
+	} else if tmp, err := time.Parse("2006-01-02", r.URL.Query().Get("begin")); err == nil {
+		begin = &tmp
+	}
+	if tmp, err := time.Parse(time.RFC3339, r.URL.Query().Get("end")); err == nil {
+		end = &tmp
+	} else if tmp, err := time.Parse("2006-01-02", r.URL.Query().Get("end")); err == nil {
+		end = &tmp
+	}
+
+	sortP := r.URL.Query().Get("sort")
+	if sortP == "" {
+		sortP = "-date"
+	}
+	sort = &sortP
 	tracks := []data.Track{}
 	if data.CheckConnection() {
 		session := data.Mongo.Copy()
 		defer session.Close()
 		userid := context.Get(r, "userid").(bson.ObjectId)
 		c := session.DB("test").C("track")
-		c.Find(bson.M{"userid": userid}).Sort("date").All(&tracks)
+		dateRange := bson.M{"$gte": time.Time{}}
+		if begin != nil {
+			fmt.Println(*begin)
+		}
+		if end != nil {
+			fmt.Println(*end)
+		}
+		c.Find(bson.M{"userid": userid, "date": dateRange}).Sort(*sort).All(&tracks)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Database Error"))
@@ -83,7 +108,7 @@ func createTrack(w http.ResponseWriter, r *http.Request) {
 	}
 	// set current user to the track
 	track.UserID = context.Get(r, "userid").(bson.ObjectId)
-	track.AverageSpeed = float32(track.Distance) / float32(track.Time)
+	track.Speed = float32(track.Distance) / float32(track.Time)
 	if data.CheckConnection() {
 		session := data.Mongo.Copy()
 

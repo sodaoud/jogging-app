@@ -6,7 +6,6 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -21,16 +20,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.gson.Gson;
 import com.toptal.joggingtracking.datatype.Track;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 
 import biz.kasual.materialnumberpicker.MaterialNumberPicker;
@@ -62,11 +58,6 @@ public class TrackActivity extends AppCompatActivity {
     private MenuItem editItem;
     private TrackTask mTrackTask;
     private OkHttpClient client;
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +66,7 @@ public class TrackActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        account = getIntent().getParcelableExtra(ConstantUtil.ACCOUNT);
+        account = getIntent().getParcelableExtra(Util.ACCOUNT);
         edit = getIntent().getBooleanExtra(EDIT, true);
         track = (Track) getIntent().getSerializableExtra(TRACK);
         tmp = new Track(null, -1, -1);
@@ -118,6 +109,10 @@ public class TrackActivity extends AppCompatActivity {
                 final MaterialNumberPicker hour = (MaterialNumberPicker) view.findViewById(R.id.hour);
                 final MaterialNumberPicker minute = (MaterialNumberPicker) view.findViewById(R.id.minute);
                 final MaterialNumberPicker second = (MaterialNumberPicker) view.findViewById(R.id.second);
+
+                hour.setWrapSelectorWheel(true);
+                minute.setWrapSelectorWheel(true);
+                second.setWrapSelectorWheel(true);
                 if (tmp.getDuration() >= 0) {
                     hour.setValue(tmp.getNumOfHours());
                     minute.setValue(tmp.getNumOfMinutes());
@@ -160,7 +155,7 @@ public class TrackActivity extends AppCompatActivity {
                 if (tmp.getDate() != null) {
                     calendar.setTime(tmp.getDate());
                 }
-                new DatePickerDialog(TrackActivity.this, new DatePickerDialog.OnDateSetListener() {
+                DatePickerDialog dialog = new DatePickerDialog(TrackActivity.this, new DatePickerDialog.OnDateSetListener() {
 
                     @Override
                     public void onDateSet(DatePicker view, int year, int monthOfYear,
@@ -172,15 +167,13 @@ public class TrackActivity extends AppCompatActivity {
                         showDate.setText(tmp.getFormatedDate());
                     }
                 }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)).show();
+                        calendar.get(Calendar.DAY_OF_MONTH));
+                dialog.getDatePicker().setMaxDate(new Date().getTime());
+                dialog.show();
             }
         });
 
         client = new OkHttpClient();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client2 = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     @Override
@@ -211,7 +204,7 @@ public class TrackActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.track_menu, menu);
         doneItem = menu.findItem(R.id.done);
         editItem = menu.findItem(R.id.edit);
         editItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
@@ -266,42 +259,6 @@ public class TrackActivity extends AppCompatActivity {
         return true;
     }
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("Track Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client2.connect();
-        AppIndex.AppIndexApi.start(client2, getIndexApiAction());
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client2, getIndexApiAction());
-        client2.disconnect();
-    }
-
     class TrackTask extends AsyncTask<Void, Void, Response> {
 
         TrackTask() {
@@ -317,7 +274,7 @@ public class TrackActivity extends AppCompatActivity {
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), gson.toJson(track));
                 Request request = new Request.Builder()
                         .addHeader("Authorization", token)
-                        .url(ConstantUtil.URL_TRACK)
+                        .url(Util.URL_TRACK)
                         .post(body)
                         .build();
                 return client.newCall(request).execute();

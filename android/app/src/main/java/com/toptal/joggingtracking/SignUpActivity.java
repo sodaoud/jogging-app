@@ -1,8 +1,5 @@
 package com.toptal.joggingtracking;
 
-import android.accounts.Account;
-import android.accounts.AccountAuthenticatorResponse;
-import android.accounts.AccountManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
@@ -19,10 +16,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.toptal.joggingtracking.auth.AccountGeneral;
 import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.TokenUtil;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,20 +45,11 @@ public class SignUpActivity extends AppCompatActivity {
     private View mProgressView;
     private View mLoginFormView;
     private OkHttpClient client;
-    private AccountManager mAccountManager;
-    private AccountAuthenticatorResponse mAccountAuthenticatorResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
-
-        mAccountAuthenticatorResponse =
-                getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
-
-        if (mAccountAuthenticatorResponse != null) {
-            mAccountAuthenticatorResponse.onRequestContinued();
-        }
 
         mUsernameView = (EditText) findViewById(R.id.username);
 
@@ -91,7 +78,6 @@ public class SignUpActivity extends AppCompatActivity {
 
         client = new OkHttpClient();
 
-        mAccountManager = AccountManager.get(getBaseContext());
     }
 
     private void attemptLogin() {
@@ -185,7 +171,7 @@ public class SignUpActivity extends AppCompatActivity {
                 obj.put("password", mPassword);
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), obj.toString());
                 Request request = new Request.Builder()
-                        .url(ConstantUtil.URL_SIGN_UP)
+                        .url(Util.URL_SIGN_UP)
                         .post(body)
                         .build();
                 return client.newCall(request).execute();
@@ -212,7 +198,14 @@ public class SignUpActivity extends AppCompatActivity {
                 }
                 if (response.code() == 201) {
                     TokenUtil tu = TokenUtil.getFromString(bodyString);
-                    finishLogin(tu, mUsername, mPassword);
+                    Bundle mResultBundle = Util.finishLogin(SignUpActivity.this
+                            , tu, mUsername, mPassword);
+
+                    Intent i = new Intent();
+                    i.putExtras(mResultBundle);
+
+                    setResult(RESULT_OK, i);
+                    finish();
                 } else {
                     ErrorUtil err = ErrorUtil.getFromString(bodyString);
                     switch (err.getError()) {
@@ -236,36 +229,6 @@ public class SignUpActivity extends AppCompatActivity {
             mAuthTask = null;
             showProgress(false);
         }
-    }
-
-    private void finishLogin(TokenUtil tu, String mUsername, String mPassword) {
-
-        final Account account = new Account(mUsername, AccountGeneral.ACCOUNT_TYPE);
-
-        mAccountManager.addAccountExplicitly(account, mPassword, getRolesBundle(tu.getRoles()));
-        mAccountManager.setAuthToken(account, "Bearer", tu.getToken());
-
-        Bundle mResultBundle = new Bundle();
-        mResultBundle.putString(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        mResultBundle.putString(AccountManager.KEY_AUTHTOKEN, tu.getToken());
-
-        if (mAccountAuthenticatorResponse != null) {
-            mAccountAuthenticatorResponse.onResult(mResultBundle);
-        }
-        Intent i = new Intent();
-        i.putExtras(mResultBundle);
-        setResult(RESULT_OK, i);
-        finish();
-    }
-
-    private Bundle getRolesBundle(String[] roles) {
-        Bundle b = new Bundle();
-        for (String role : roles) {
-            if (role.equals(AccountGeneral.ADMIN)) b.putString(AccountGeneral.ADMIN, "admin");
-            if (role.equals(AccountGeneral.MANAGER)) b.putString(AccountGeneral.MANAGER, "manager");
-            if (role.equals(AccountGeneral.USER)) b.putString(AccountGeneral.USER, "user");
-        }
-        return b;
     }
 }
 

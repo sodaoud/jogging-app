@@ -3,12 +3,21 @@ package com.toptal.joggingtracking.fragments;
 import android.accounts.AccountManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -17,8 +26,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.DatePicker;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -26,14 +35,19 @@ import com.toptal.joggingtracking.MainActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.TrackActivity;
 import com.toptal.joggingtracking.datatype.Track;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 
+import io.gsonfire.util.RFC3339DateFormat;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -47,7 +61,6 @@ public class JoggingFragment extends Fragment {
     private RecyclerView list;
     private Adapter adapter;
     private OkHttpClient client;
-    //    private View mainView;
     private View noServerView;
     private View mProgressView;
     private TracksTask mTracksTask;
@@ -63,12 +76,13 @@ public class JoggingFragment extends Fragment {
             order = ORDER_DESC;
         }
 
-        final String ORDER_ASC = "asc";
-        final String ORDER_DESC = "desc";
+        final static String ORDER_ASC = "-";
+        final static String ORDER_DESC = "";
 
-        Date begin;
-        Date end;
+        String begin;
+        String end;
         String order;
+        String field = "date";
     }
 
     public static Fragment newInstance() {
@@ -124,7 +138,7 @@ public class JoggingFragment extends Fragment {
     private void createNewTrack() {
         Intent i = new Intent(getActivity(), TrackActivity.class);
         Bundle b = new Bundle();
-        b.putParcelable(ConstantUtil.ACCOUNT, ((MainActivity) getActivity()).getAccount());
+        b.putParcelable(Util.ACCOUNT, ((MainActivity) getActivity()).getAccount());
         i.putExtras(b);
         startActivityForResult(i, 432);
     }
@@ -195,11 +209,20 @@ public class JoggingFragment extends Fragment {
 
         @Override
         protected Response doInBackground(Void... params) {
+            HttpUrl url = new HttpUrl.Builder()
+                    .scheme("http")
+                    .host(Util.HOST)
+                    .port(Util.PORT)
+                    .addPathSegment(Util.SEGMENT_TRACK)
+                    .addQueryParameter("sort", filter.order + filter.field)
+                    .addQueryParameter("begin", filter.begin)
+                    .addQueryParameter("end", filter.end)
+                    .build();
             String token = ((MainActivity) getActivity()).getAuthToken();
             try {
                 Request request = new Request.Builder()
                         .addHeader("Authorization", token)
-                        .url(ConstantUtil.URL_TRACK)
+                        .url(url)
                         .get()
                         .build();
                 return client.newCall(request).execute();
@@ -231,11 +254,27 @@ public class JoggingFragment extends Fragment {
                     tracks.addAll(tmp);
                     list.getAdapter().notifyDataSetChanged();
 
+                } else if (response.code() == 401) {
+                    Util.getNewAuthToken(new Handler() {
+                        @Override
+                        public void handleMessage(Message msg) {
+                            if (msg.what == Util.SUCCES) {
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        getTracks();
+                                    }
+                                });
+                            } else {
+                                showNoServer(true);
+                            }
+                        }
+                    });
                 } else {
-                    // TODO show error to the user
+                    if (tracks.isEmpty())
+                        showNoServer(true);
                 }
             } else {
-                // TODO
                 if (tracks.isEmpty())
                     showNoServer(true);
             }
@@ -250,17 +289,18 @@ public class JoggingFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.filter_menu, menu);
         super.onCreateOptionsMenu(menu, inflater);
-        menu.add("Filter").setTitle("Filter")
-                .setIcon(R.drawable.ic_filter_list)
-                .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
-                .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        Toast.makeText(getActivity(), "Khra", Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-                });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.filter) {
+            DialogFragment newFragment = new FilterDialogFragment();
+            newFragment.show(getActivity().getSupportFragmentManager(), "dialog");
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -298,22 +338,165 @@ public class JoggingFragment extends Fragment {
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.track_card, parent, false);
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.track_card,
+                    parent, false);
             return new ViewHolder(v);
         }
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
             Track track = tracks.get(position);
-            holder.mDateView.setText(track.getDate().toString());
-            holder.mDurationView.setText(String.valueOf(track.getDuration()));
-            holder.mDistanceView.setText(String.valueOf(track.getDistance()));
-            holder.mSpeedView.setText(String.valueOf(track.getSpeed()));
+            holder.mDateView.setText(track.getFormatedDate());
+            holder.mDurationView.setText(track.getFormatedDuration());
+            holder.mDistanceView.setText(track.getFormatedDistance());
+            holder.mSpeedView.setText(track.getFormatedSpeed());
         }
 
         @Override
         public int getItemCount() {
             return tracks.size();
         }
+    }
+
+    @SuppressLint({"SimpleDateFormat", "ValidFragment"})
+    class FilterDialogFragment extends DialogFragment {
+
+
+        private Calendar beginCal;
+        private Calendar endCal;
+        private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        private RFC3339DateFormat dateFormatws = new RFC3339DateFormat();
+        private AppCompatSpinner order;
+        private TextView beginDate;
+        private TextView endDate;
+        private View view;
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+
+            LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(
+                    Context.LAYOUT_INFLATER_SERVICE);
+            view = inflater.inflate(R.layout.filter_dialog, null);
+            beginDate = (TextView) view.findViewById(R.id.show_begin);
+            endDate = (TextView) view.findViewById(R.id.show_end);
+            order = (AppCompatSpinner) view.findViewById(R.id.order);
+            if (filter != null) {
+                order.setSelection(filter.order.equals(Filter.ORDER_ASC) ? 0 : 1);
+                if (filter.begin != null) {
+                    beginCal = new GregorianCalendar();
+                    try {
+                        beginCal.setTime(dateFormatws.parse(filter.begin));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    beginDate.setText(dateFormat.format(beginCal.getTime()));
+                }
+                if (filter.end != null) {
+                    endCal = new GregorianCalendar();
+                    try {
+                        endCal.setTime(dateFormatws.parse(filter.end));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    endDate.setText(dateFormat.format(endCal.getTime()));
+                }
+                order.setSelection(filter.order.equals(Filter.ORDER_ASC) ? 0 : 1);
+            }
+
+
+            initListeners();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            return builder
+                    .setTitle("Filter")
+                    .setView(view)
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Filter",
+                            new DialogInterface.OnClickListener() {
+
+                                @Override
+                                public void onClick(DialogInterface arg0, int arg1) {
+                                    if (filter == null) filter = new Filter();
+                                    filter.order = order.getSelectedItemPosition() == 0 ? Filter.ORDER_ASC : Filter.ORDER_DESC;
+                                    if (beginCal != null)
+                                        filter.begin = dateFormatws.format(beginCal.getTime());
+                                    if (endCal != null)
+                                        filter.end = dateFormatws.format(endCal.getTime());
+                                    getTracks();
+                                }
+                            }).create();
+        }
+
+        private void initListeners() {
+            beginDate.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    Calendar tmp = new GregorianCalendar();
+                    if (beginCal != null) {
+                        tmp = beginCal;
+                    }
+                    new DatePickerDialog(getActivity(), new DatePickerDialog.OnDateSetListener() {
+
+                        @Override
+                        public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                              int dayOfMonth) {
+                            if (beginCal == null) {
+                                beginCal = GregorianCalendar.getInstance();
+                                beginCal.set(Calendar.HOUR_OF_DAY,0);
+                                beginCal.set(Calendar.MINUTE,0);
+                                beginCal.set(Calendar.SECOND,0);
+                                beginCal.set(Calendar.MILLISECOND,0);
+                            }
+                            beginCal.set(year, monthOfYear, dayOfMonth);
+                            beginDate.setText(dateFormat.format(beginCal.getTime()));
+                            if (endCal != null && (endCal.get(Calendar.DAY_OF_MONTH) < dayOfMonth
+                                    || endCal.get(Calendar.MONTH) < monthOfYear
+                                    || endCal.get(Calendar.YEAR) < year)) {
+                                endCal.set(year, monthOfYear, dayOfMonth);
+                                endDate.setText(dateFormat.format(endCal.getTime()));
+                            }
+                        }
+                    }, tmp.get(Calendar.YEAR), tmp.get(Calendar.MONTH), tmp
+                            .get(Calendar.DAY_OF_MONTH)).show();
+                }
+            });
+            endDate.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+
+                    Calendar tmp = new GregorianCalendar();
+                    if (endCal != null) {
+                        tmp = endCal;
+                    }
+                    new DatePickerDialog(getActivity(), new DatePickerDialog.OnDateSetListener() {
+
+                        @Override
+                        public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                              int dayOfMonth) {
+                            if (endCal == null) {
+                                endCal = GregorianCalendar.getInstance();
+                                endCal.set(Calendar.HOUR_OF_DAY,0);
+                                endCal.set(Calendar.MINUTE,0);
+                                endCal.set(Calendar.SECOND,0);
+                                endCal.set(Calendar.MILLISECOND,0);
+                            }
+                            endCal.set(year, monthOfYear, dayOfMonth);
+                            endDate.setText(dateFormat.format(endCal.getTime()));
+                            if (beginCal != null && (beginCal.get(Calendar.DAY_OF_MONTH) > dayOfMonth
+                                    || beginCal.get(Calendar.MONTH) > monthOfYear
+                                    || beginCal.get(Calendar.YEAR) > year)) {
+                                beginCal.set(year, monthOfYear, dayOfMonth);
+                                beginDate.setText(dateFormat.format(beginCal.getTime()));
+                            }
+                        }
+                    }, tmp.get(Calendar.YEAR), tmp.get(Calendar.MONTH), tmp
+                            .get(Calendar.DAY_OF_MONTH)).show();
+                }
+            });
+        }
+
+
     }
 }

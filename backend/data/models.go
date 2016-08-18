@@ -8,12 +8,12 @@ import (
 
 // Track is the base sturcture of the application representing a jogging tarck
 type Track struct {
-	ID           bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Date         time.Time     `json:"date"`
-	Distance     int           `json:"distance"`
-	Time         int           `json:"duration"` // time in seconds
-	AverageSpeed float32       `json:"speed"`
-	UserID       bson.ObjectId `json:"userid"`
+	ID       bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	Date     time.Time     `json:"date"`
+	Distance int           `json:"distance"`
+	Time     int           `json:"duration"` // time in seconds
+	Speed    float32       `json:"speed"`
+	UserID   bson.ObjectId `json:"userid"`
 }
 
 // Validate the track

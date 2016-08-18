@@ -35,7 +35,7 @@ import android.widget.TextView;
 
 import com.toptal.joggingtracking.fragments.JoggingFragment;
 import com.toptal.joggingtracking.fragments.ReportFragment;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity
                     return;
                 }
                 b.setTitle("Change account");
-                Account[] accounts = am.getAccounts();
+                Account[] accounts = am.getAccountsByType(Util.ACCOUNT_TYPE);
                 if (accounts.length > 1) {
                     final List<Account> list = new ArrayList<>(Arrays.asList(accounts));
                     list.remove(account);
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             PreferenceManager.getDefaultSharedPreferences(MainActivity.this)
-                                    .edit().putString(ConstantUtil.USER_PREF, list.get(which).name)
+                                    .edit().putString(Util.USER_PREF, list.get(which).name)
                                     .apply();
 
                             Intent intent = getIntent();
@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity
         if (requestCode == REQ_LOGIN && resultCode == RESULT_OK) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(ConstantUtil.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
+            editor.putString(Util.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
             editor.apply();
 
             Intent intent = getIntent();
@@ -234,10 +234,10 @@ public class MainActivity extends AppCompatActivity
             // Already granted
             return;
         }
-        Account[] accounts = am.getAccounts();
+        Account[] accounts = am.getAccountsByType(Util.ACCOUNT_TYPE);
         if (accounts.length > 0) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            String username = prefs.getString(ConstantUtil.USER_PREF, null);
+            String username = prefs.getString(Util.USER_PREF, null);
             if (username != null) {
                 for (Account ac : accounts) {
                     if (username.equals(ac.name)) {
@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity
             }
             if (account == null) {
                 account = accounts[0];
-                prefs.edit().putString(ConstantUtil.USER_PREF, account.name).apply();
+                prefs.edit().putString(Util.USER_PREF, account.name).apply();
             }
         } else {
             startActivity(new Intent(this, WelcomeActivity.class));

@@ -124,4 +124,7 @@ public class Track implements Serializable {
         return (distance - getNumOfKm() * 1000) / 10;
     }
 
+    public String getFormatedSpeed() {
+        return speed * 3.6 + " Km/h";
+    }
 }

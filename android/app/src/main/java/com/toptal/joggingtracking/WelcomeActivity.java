@@ -1,22 +1,23 @@
 package com.toptal.joggingtracking;
 
 import android.Manifest;
-import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.toptal.joggingtracking.auth.AccountGeneral;
-import com.toptal.joggingtracking.util.ConstantUtil;
+import com.toptal.joggingtracking.util.Util;
 
 public class WelcomeActivity extends AppCompatActivity {
 
+
+    private static final int GET_ACCOUNTS_REQUEST_CODE = 32112;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,12 +25,23 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_welcome);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.GET_ACCOUNTS}, GET_ACCOUNTS_REQUEST_CODE);
             return;
         }
-        Account[] accounts = AccountManager.get(getBaseContext()).getAccountsByType(AccountGeneral.ACCOUNT_TYPE);
-        if (accounts.length > 0) {
+        if (Util.getAccount(this) != null) {
             startActivity(new Intent(this, MainActivity.class));
             finish();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == GET_ACCOUNTS_REQUEST_CODE) {
+            if (Util.getAccount(this) != null) {
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
+            }
         }
     }
 
@@ -49,8 +61,8 @@ public class WelcomeActivity extends AppCompatActivity {
         if (requestCode == 123 && resultCode == RESULT_OK) {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
             SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(ConstantUtil.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
-            editor.apply(); // TODO test if main activity launches before the commit
+            editor.putString(Util.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
+            editor.apply(); // TODO test if track_menu activity launches before the commit
             startActivity(new Intent(this, MainActivity.class));
         }
     }
