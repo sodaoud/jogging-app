@@ -269,4 +269,8 @@ public class MainActivity extends AppCompatActivity
 
         return "Bearer " + token;
     }
+
+    public Account getAccount(){
+        return account;
+    }
 }

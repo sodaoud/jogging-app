@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,22 +24,26 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.MainActivity;
 import com.toptal.joggingtracking.R;
+import com.toptal.joggingtracking.TrackActivity;
 import com.toptal.joggingtracking.datatype.Track;
 import com.toptal.joggingtracking.util.ConstantUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+
 /**
  * Created by sofiane on 8/16/16.
  */
 public class JoggingFragment extends Fragment {
+
     private RecyclerView list;
     private Adapter adapter;
     private OkHttpClient client;
@@ -49,6 +54,22 @@ public class JoggingFragment extends Fragment {
     private List<Track> tracks;
     private AccountManager am;
     private LinearLayoutManager mLayoutManager;
+    private Filter filter;
+    private FloatingActionButton fab;
+
+    class Filter {
+
+        Filter() {
+            order = ORDER_DESC;
+        }
+
+        final String ORDER_ASC = "asc";
+        final String ORDER_DESC = "desc";
+
+        Date begin;
+        Date end;
+        String order;
+    }
 
     public static Fragment newInstance() {
 
@@ -65,6 +86,7 @@ public class JoggingFragment extends Fragment {
         client = new OkHttpClient();
         tracks = new ArrayList<>();
         am = AccountManager.get(getContext());
+        filter = new Filter();
     }
 
     @Override
@@ -77,19 +99,44 @@ public class JoggingFragment extends Fragment {
 
         mLayoutManager = new LinearLayoutManager(getContext());
         list.setLayoutManager(mLayoutManager);
-//        mainView = v.findViewById(R.id.list_view);
         noServerView = v.findViewById(R.id.no_data);
+        noServerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getTracks();
+            }
+        });
         mProgressView = v.findViewById(R.id.progress_view);
 
         adapter = new Adapter();
         list.setAdapter(adapter);
 
+        fab = (FloatingActionButton) v.findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                createNewTrack();
+            }
+        });
         return v;
+    }
+
+    private void createNewTrack() {
+        Intent i = new Intent(getActivity(), TrackActivity.class);
+        Bundle b = new Bundle();
+        b.putParcelable(ConstantUtil.ACCOUNT, ((MainActivity) getActivity()).getAccount());
+        i.putExtras(b);
+        startActivityForResult(i, 432);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        getTracks();
+    }
+
+    private void getTracks() {
+        showNoServer(false);
         mTracksTask = new TracksTask();
         showProgress(true);
         mTracksTask.execute((Void) null);
@@ -113,6 +160,29 @@ public class JoggingFragment extends Fragment {
             @Override
             public void onAnimationEnd(Animator animation) {
                 mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        });
+
+    }
+
+    private void showNoServer(final boolean show) {
+        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+        list.setVisibility(show ? View.GONE : View.VISIBLE);
+        list.animate().setDuration(shortAnimTime).alpha(
+                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                list.setVisibility(show ? View.GONE : View.VISIBLE);
+            }
+        });
+
+        noServerView.setVisibility(show ? View.VISIBLE : View.GONE);
+        noServerView.animate().setDuration(shortAnimTime).alpha(
+                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                noServerView.setVisibility(show ? View.VISIBLE : View.GONE);
             }
         });
 
@@ -160,13 +230,14 @@ public class JoggingFragment extends Fragment {
                     List<Track> tmp = gson.fromJson(stringBody, type);
                     tracks.addAll(tmp);
                     list.getAdapter().notifyDataSetChanged();
-//                    adapter.notifyDataSetChanged();
 
                 } else {
                     // TODO show error to the user
                 }
             } else {
-                // TODO show error to the user
+                // TODO
+                if (tracks.isEmpty())
+                    showNoServer(true);
             }
         }
 
@@ -180,7 +251,6 @@ public class JoggingFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.main, menu);
         menu.add("Filter").setTitle("Filter")
                 .setIcon(R.drawable.ic_filter_list)
                 .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)

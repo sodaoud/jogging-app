@@ -14,13 +14,16 @@ import (
 )
 
 func getTracks(w http.ResponseWriter, r *http.Request) {
+	// begin := r.URL.Query().Get("begin")
+	// end := r.URL.Query().Get("end")
+	// sort := r.URL.Query().Get("sort")
 	tracks := []data.Track{}
 	if data.CheckConnection() {
 		session := data.Mongo.Copy()
 		defer session.Close()
 		userid := context.Get(r, "userid").(bson.ObjectId)
 		c := session.DB("test").C("track")
-		c.Find(bson.M{"userid": userid}).All(&tracks)
+		c.Find(bson.M{"userid": userid}).Sort("date").All(&tracks)
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Database Error"))
@@ -92,5 +95,7 @@ func createTrack(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Database Error"))
 			return
 		}
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(track)
 	}
 }
