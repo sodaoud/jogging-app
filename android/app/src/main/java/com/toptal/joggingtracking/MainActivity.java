@@ -2,14 +2,10 @@ package com.toptal.joggingtracking;
 
 import android.Manifest;
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -37,7 +33,6 @@ import com.toptal.joggingtracking.fragments.JoggingFragment;
 import com.toptal.joggingtracking.fragments.ReportFragment;
 import com.toptal.joggingtracking.util.Util;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,8 +42,6 @@ public class MainActivity extends AppCompatActivity
 
     private static final int GET_ACCOUNTS_REQUEST_CODE = 8712;
     private static final int REQ_LOGIN = 237;
-    private Account account;
-    private AccountManager am;
     private String shownFragmentTag = null;
 
     @Override
@@ -74,12 +67,8 @@ public class MainActivity extends AppCompatActivity
         fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
         navView.setCheckedItem(R.id.nav_list);
 
-        am = AccountManager.get(this);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.GET_ACCOUNTS}, GET_ACCOUNTS_REQUEST_CODE);
-        } else {
+
             getAccountOrBackToWelcomeActivity();
-        }
 
         View header = navView.getHeaderView(0);
         header.findViewById(R.id.username).setOnClickListener(new View.OnClickListener() {
@@ -91,10 +80,10 @@ public class MainActivity extends AppCompatActivity
                     return;
                 }
                 b.setTitle("Change account");
-                Account[] accounts = am.getAccountsByType(Util.ACCOUNT_TYPE);
+                Account[] accounts = Util.getAccounts(MainActivity.this);
                 if (accounts.length > 1) {
                     final List<Account> list = new ArrayList<>(Arrays.asList(accounts));
-                    list.remove(account);
+                    list.remove(Util.getAccount(MainActivity.this));
                     ArrayAdapter<Account> adapter = new AccountAdapter(list);
                     b.setAdapter(adapter, new DialogInterface.OnClickListener() {
                         @Override
@@ -109,7 +98,7 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
                 } else {
-                    b.setMessage("You are logged as " + account.name);
+                    b.setMessage("You are logged as " + Util.getAccount(MainActivity.this).name);
                 }
                 b.setNegativeButton("Log with another user", new DialogInterface.OnClickListener() {
                     @Override
@@ -120,14 +109,13 @@ public class MainActivity extends AppCompatActivity
                 b.setPositiveButton("Log out", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        am.removeAccount(account,
-                                new AccountManagerCallback<Boolean>() {
-                                    @Override
-                                    public void run(AccountManagerFuture<Boolean> arg0) {
-                                        startActivity(new Intent(MainActivity.this, WelcomeActivity.class));
-                                        finish();
-                                    }
-                                }, null);
+                        Util.logout(MainActivity.this,  new AccountManagerCallback<Boolean>() {
+                            @Override
+                            public void run(AccountManagerFuture<Boolean> arg0) {
+                                startActivity(new Intent(MainActivity.this, WelcomeActivity.class));
+                                finish();
+                            }
+                        });
                     }
                 });
                 b.show();
@@ -145,11 +133,6 @@ public class MainActivity extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQ_LOGIN && resultCode == RESULT_OK) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(Util.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
-            editor.apply();
-
             Intent intent = getIntent();
             finish();
             startActivity(intent);
@@ -230,47 +213,12 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void getAccountOrBackToWelcomeActivity() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
-            // Already granted
-            return;
-        }
-        Account[] accounts = am.getAccountsByType(Util.ACCOUNT_TYPE);
-        if (accounts.length > 0) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            String username = prefs.getString(Util.USER_PREF, null);
-            if (username != null) {
-                for (Account ac : accounts) {
-                    if (username.equals(ac.name)) {
-                        account = ac;
-                        break;
-                    }
-                }
-            }
-            if (account == null) {
-                account = accounts[0];
-                prefs.edit().putString(Util.USER_PREF, account.name).apply();
-            }
-        } else {
+        if (Util.getAccount(this)==null) {
             startActivity(new Intent(this, WelcomeActivity.class));
             finish();
         }
 
         View header = ((NavigationView) findViewById(R.id.nav_view)).getHeaderView(0);
-        ((TextView) header.findViewById(R.id.username)).setText(account.name);
-    }
-
-    public String getAuthToken() {
-        String token = null;
-        try {
-            token = am.blockingGetAuthToken(account, "Bearer", false);
-        } catch (OperationCanceledException | IOException | AuthenticatorException e) {
-            e.printStackTrace();
-        }
-
-        return "Bearer " + token;
-    }
-
-    public Account getAccount(){
-        return account;
+        ((TextView) header.findViewById(R.id.username)).setText(Util.getAccount(this).name);
     }
 }

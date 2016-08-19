@@ -3,6 +3,9 @@ package com.toptal.joggingtracking.util;
 import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -44,7 +47,6 @@ public class Util {
     public static final String URL_SIGN_UP = BASE_URL + "/signup";
     public static final String URL_TRACK = BASE_URL + "/" + SEGMENT_TRACK;
     public static final String USER_PREF = "USER_PREF";
-    public static final String ACCOUNT = "ACCOUNT";
 
     public static final String ACCOUNT_TYPE = "com.toptal.jogtrack";
     public static final String ROLES = "ROLES";
@@ -138,12 +140,18 @@ public class Util {
         return account;
     }
 
-    private static AccountManager getAccountManager(Context ctx) {
+    public static AccountManager getAccountManager(Context ctx) {
         if (am == null)
             am = AccountManager.get(ctx);
         return am;
     }
 
+    public static Account[] getAccounts(Context ctx) {
+        if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
+            return new Account[]{};
+        }
+        return getAccountManager(ctx).getAccountsByType(ACCOUNT_TYPE);
+    }
 
     private static void setToken(TokenUtil tu) {
 
@@ -165,11 +173,19 @@ public class Util {
         getAccountManager(ctx).addAccountExplicitly(account, mPassword, getRolesBundle(tu.getRoles()));
         getAccountManager(ctx).setAuthToken(account, "Bearer", tu.getToken());
 
+        setDefaultAccount(ctx, account);
+
         Bundle mResultBundle = new Bundle();
         mResultBundle.putString(AccountManager.KEY_ACCOUNT_NAME, mUsername);
         mResultBundle.putString(AccountManager.KEY_AUTHTOKEN, tu.getToken());
 
         return mResultBundle;
+    }
+
+    public static void setDefaultAccount(Context ctx, Account account) {
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit()
+                .putString(Util.USER_PREF, account.name).apply();
+
     }
 
     private static Bundle getRolesBundle(String[] roles) {
@@ -182,4 +198,19 @@ public class Util {
         return b;
     }
 
+    public static String getAuthToken(Context ctx) {
+        String token = null;
+        try {
+            token = getAccountManager(ctx).blockingGetAuthToken(getAccount(ctx), "Bearer", false);
+        } catch (OperationCanceledException | IOException | AuthenticatorException e) {
+            e.printStackTrace();
+        }
+
+        return "Bearer " + token;
+    }
+
+    public static void logout(Context ctx, AccountManagerCallback<Boolean> callback) {
+        getAccountManager(ctx).removeAccount(getAccount(ctx), callback, null);
+        account = null;
+    }
 }

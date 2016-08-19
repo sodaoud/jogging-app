@@ -11,7 +11,7 @@ type Track struct {
 	ID       bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Date     time.Time     `json:"date"`
 	Distance int           `json:"distance"`
-	Time     int           `json:"duration"` // time in seconds
+	Duration int           `json:"duration"` // time in seconds
 	Speed    float32       `json:"speed"`
 	UserID   bson.ObjectId `json:"userid"`
 }
@@ -21,7 +21,7 @@ func (t *Track) Validate() (bool, string) {
 	if t.Date.After(time.Now()) {
 		return false, "Invalid date"
 	}
-	if t.Time <= 0 {
+	if t.Duration <= 0 {
 		return false, "time must be greater than 0"
 	}
 	if t.Distance <= 0 {

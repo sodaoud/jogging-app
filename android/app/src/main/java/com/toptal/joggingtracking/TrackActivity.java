@@ -1,6 +1,5 @@
 package com.toptal.joggingtracking;
 
-import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
@@ -32,6 +31,9 @@ import java.util.GregorianCalendar;
 import biz.kasual.materialnumberpicker.MaterialNumberPicker;
 import io.gsonfire.DateSerializationPolicy;
 import io.gsonfire.GsonFireBuilder;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -45,7 +47,6 @@ public class TrackActivity extends AppCompatActivity {
     public static final String TRACK = "TRACK";
 
     private boolean edit = false;
-    private Account account;
     private Track track;
     private Track tmp;
     private TextView showDate;
@@ -56,6 +57,7 @@ public class TrackActivity extends AppCompatActivity {
     private ImageView editDuration;
     private MenuItem doneItem;
     private MenuItem editItem;
+    private MenuItem deleteItem;
     private TrackTask mTrackTask;
     private OkHttpClient client;
 
@@ -66,7 +68,6 @@ public class TrackActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        account = getIntent().getParcelableExtra(Util.ACCOUNT);
         edit = getIntent().getBooleanExtra(EDIT, true);
         track = (Track) getIntent().getSerializableExtra(TRACK);
         tmp = new Track(null, -1, -1);
@@ -189,6 +190,9 @@ public class TrackActivity extends AppCompatActivity {
             showDate.setText(track.getFormatedDate());
             showDistance.setText(track.getFormatedDistance());
             showDuration.setText(track.getFormatedDuration());
+            tmp.setDate(track.getDate());
+            tmp.setDuration(track.getDuration());
+            tmp.setDistance(track.getDistance());
         }
     }
 
@@ -200,6 +204,8 @@ public class TrackActivity extends AppCompatActivity {
             doneItem.setVisible(edit);
         if (editItem != null)
             editItem.setVisible(!edit);
+        if (deleteItem != null)
+            deleteItem.setVisible(!edit);
     }
 
     @Override
@@ -216,8 +222,51 @@ public class TrackActivity extends AppCompatActivity {
             }
         });
 
+        deleteItem = menu.findItem(R.id.delete);
+        deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                new AlertDialog.Builder(TrackActivity.this)
+                        .setTitle("Delete")
+                        .setMessage("Are you sure you want to delete this entry?")
+                        .setNegativeButton("No", null)
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                HttpUrl.Builder builder = new HttpUrl.Builder()
+                                        .scheme("http")
+                                        .host(Util.HOST)
+                                        .port(Util.PORT)
+                                        .addPathSegment(Util.SEGMENT_TRACK)
+                                        .addPathSegment(track.getId());
+                                Request request = new Request.Builder()
+                                        .addHeader("Authorization", Util.getAuthToken(TrackActivity.this))
+                                        .url(builder.build())
+                                        .delete()
+                                        .build();
+                                client.newCall(request).enqueue(new Callback() {
+                                    @Override
+                                    public void onFailure(Call call, IOException e) {
+                                        Toast.makeText(TrackActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
+                                    }
+
+                                    @Override
+                                    public void onResponse(Call call, Response response) throws IOException {
+                                        if (response.code() == 200) {
+                                            finish();
+                                        } else {
+                                            Toast.makeText(TrackActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                });
+                            }
+                        }).show();
+                return true;
+            }
+        });
         doneItem.setVisible(edit);
         editItem.setVisible(!edit);
+        deleteItem.setVisible(!edit);
         return true;
     }
 
@@ -235,7 +284,8 @@ public class TrackActivity extends AppCompatActivity {
 
     private void saveTrack() {
         if (!validate()) return;
-        track = new Track();
+        if (track == null)
+            track = new Track();
         track.setDuration(tmp.getDuration());
         track.setDistance(tmp.getDistance());
         track.setDate(tmp.getDate());
@@ -268,15 +318,25 @@ public class TrackActivity extends AppCompatActivity {
         protected Response doInBackground(Void... params) {
             String token = getAuthToken();
             try {
-
+                HttpUrl.Builder builder = new HttpUrl.Builder()
+                        .scheme("http")
+                        .host(Util.HOST)
+                        .port(Util.PORT)
+                        .addPathSegment(Util.SEGMENT_TRACK);
+                if (track.getId() != null && !track.getId().equals(""))
+                    builder.addPathSegment(track.getId());
                 Gson gson = new GsonFireBuilder().dateSerializationPolicy(DateSerializationPolicy.rfc3339).createGson();
 
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), gson.toJson(track));
-                Request request = new Request.Builder()
+                Request.Builder requestBuilder = new Request.Builder()
                         .addHeader("Authorization", token)
-                        .url(Util.URL_TRACK)
-                        .post(body)
-                        .build();
+                        .url(builder.build());
+
+                if (track.getId() != null && !track.getId().equals(""))
+                    requestBuilder.put(body);
+                else
+                    requestBuilder.post(body);
+                Request request = requestBuilder.build();
                 return client.newCall(request).execute();
 
             } catch (IOException e) {
@@ -310,7 +370,7 @@ public class TrackActivity extends AppCompatActivity {
     public String getAuthToken() {
         String token = null;
         try {
-            token = AccountManager.get(this).blockingGetAuthToken(account, "Bearer", false);
+            token = AccountManager.get(this).blockingGetAuthToken(Util.getAccount(this), "Bearer", false);
         } catch (OperationCanceledException | IOException | AuthenticatorException e) {
             e.printStackTrace();
         }

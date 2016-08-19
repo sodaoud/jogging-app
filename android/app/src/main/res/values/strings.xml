@@ -25,8 +25,8 @@
         <item>Imperial (Mile)</item>
     </string-array>
     <string-array name="sorting">
-        <item>Ascending</item>
         <item>Descending</item>
+        <item>Ascending</item>
     </string-array>
     <string name="title_activity_track">TrackActivity</string>
 </resources>

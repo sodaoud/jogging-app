@@ -31,7 +31,6 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.toptal.joggingtracking.MainActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.TrackActivity;
 import com.toptal.joggingtracking.datatype.Track;
@@ -76,8 +75,8 @@ public class JoggingFragment extends Fragment {
             order = ORDER_DESC;
         }
 
-        final static String ORDER_ASC = "-";
-        final static String ORDER_DESC = "";
+        final static String ORDER_DESC = "-";
+        final static String ORDER_ASC = "";
 
         String begin;
         String end;
@@ -138,7 +137,6 @@ public class JoggingFragment extends Fragment {
     private void createNewTrack() {
         Intent i = new Intent(getActivity(), TrackActivity.class);
         Bundle b = new Bundle();
-        b.putParcelable(Util.ACCOUNT, ((MainActivity) getActivity()).getAccount());
         i.putExtras(b);
         startActivityForResult(i, 432);
     }
@@ -218,7 +216,7 @@ public class JoggingFragment extends Fragment {
                     .addQueryParameter("begin", filter.begin)
                     .addQueryParameter("end", filter.end)
                     .build();
-            String token = ((MainActivity) getActivity()).getAuthToken();
+            String token = Util.getAuthToken(getActivity());
             try {
                 Request request = new Request.Builder()
                         .addHeader("Authorization", token)
@@ -345,11 +343,20 @@ public class JoggingFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            Track track = tracks.get(position);
+            final Track track = tracks.get(position);
             holder.mDateView.setText(track.getFormatedDate());
             holder.mDurationView.setText(track.getFormatedDuration());
             holder.mDistanceView.setText(track.getFormatedDistance());
             holder.mSpeedView.setText(track.getFormatedSpeed());
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent(getActivity(), TrackActivity.class);
+                    i.putExtra(TrackActivity.EDIT, false);
+                    i.putExtra(TrackActivity.TRACK, track);
+                    startActivity(i);
+                }
+            });
         }
 
         @Override
@@ -381,7 +388,7 @@ public class JoggingFragment extends Fragment {
             endDate = (TextView) view.findViewById(R.id.show_end);
             order = (AppCompatSpinner) view.findViewById(R.id.order);
             if (filter != null) {
-                order.setSelection(filter.order.equals(Filter.ORDER_ASC) ? 0 : 1);
+                order.setSelection(filter.order.equals(Filter.ORDER_DESC) ? 0 : 1);
                 if (filter.begin != null) {
                     beginCal = new GregorianCalendar();
                     try {
@@ -400,7 +407,7 @@ public class JoggingFragment extends Fragment {
                     }
                     endDate.setText(dateFormat.format(endCal.getTime()));
                 }
-                order.setSelection(filter.order.equals(Filter.ORDER_ASC) ? 0 : 1);
+                order.setSelection(filter.order.equals(Filter.ORDER_DESC) ? 0 : 1);
             }
 
 
@@ -417,7 +424,7 @@ public class JoggingFragment extends Fragment {
                                 @Override
                                 public void onClick(DialogInterface arg0, int arg1) {
                                     if (filter == null) filter = new Filter();
-                                    filter.order = order.getSelectedItemPosition() == 0 ? Filter.ORDER_ASC : Filter.ORDER_DESC;
+                                    filter.order = order.getSelectedItemPosition() == 0 ? Filter.ORDER_DESC : Filter.ORDER_ASC;
                                     if (beginCal != null)
                                         filter.begin = dateFormatws.format(beginCal.getTime());
                                     if (endCal != null)
@@ -443,10 +450,10 @@ public class JoggingFragment extends Fragment {
                                               int dayOfMonth) {
                             if (beginCal == null) {
                                 beginCal = GregorianCalendar.getInstance();
-                                beginCal.set(Calendar.HOUR_OF_DAY,0);
-                                beginCal.set(Calendar.MINUTE,0);
-                                beginCal.set(Calendar.SECOND,0);
-                                beginCal.set(Calendar.MILLISECOND,0);
+                                beginCal.set(Calendar.HOUR_OF_DAY, 0);
+                                beginCal.set(Calendar.MINUTE, 0);
+                                beginCal.set(Calendar.SECOND, 0);
+                                beginCal.set(Calendar.MILLISECOND, 0);
                             }
                             beginCal.set(year, monthOfYear, dayOfMonth);
                             beginDate.setText(dateFormat.format(beginCal.getTime()));
@@ -477,10 +484,10 @@ public class JoggingFragment extends Fragment {
                                               int dayOfMonth) {
                             if (endCal == null) {
                                 endCal = GregorianCalendar.getInstance();
-                                endCal.set(Calendar.HOUR_OF_DAY,0);
-                                endCal.set(Calendar.MINUTE,0);
-                                endCal.set(Calendar.SECOND,0);
-                                endCal.set(Calendar.MILLISECOND,0);
+                                endCal.set(Calendar.HOUR_OF_DAY, 0);
+                                endCal.set(Calendar.MINUTE, 0);
+                                endCal.set(Calendar.SECOND, 0);
+                                endCal.set(Calendar.MILLISECOND, 0);
                             }
                             endCal.set(year, monthOfYear, dayOfMonth);
                             endDate.setText(dateFormat.format(endCal.getTime()));

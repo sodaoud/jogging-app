@@ -13,6 +13,7 @@ public class Track implements Serializable {
     private float speed;
     private int distance;
     private String userid;
+    private String id;
 
     public Track() {
     }
@@ -66,6 +67,14 @@ public class Track implements Serializable {
 
     public void setSpeed(float speed) {
         this.speed = speed;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getFormatedDuration() {

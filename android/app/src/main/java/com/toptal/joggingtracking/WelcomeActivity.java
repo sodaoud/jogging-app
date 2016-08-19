@@ -1,12 +1,9 @@
 package com.toptal.joggingtracking;
 
 import android.Manifest;
-import android.accounts.AccountManager;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -59,10 +56,10 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 123 && resultCode == RESULT_OK) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(Util.USER_PREF, data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME));
-            editor.apply(); // TODO test if track_menu activity launches before the commit
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.GET_ACCOUNTS}, GET_ACCOUNTS_REQUEST_CODE);
+                return;
+            }
             startActivity(new Intent(this, MainActivity.class));
         }
     }
