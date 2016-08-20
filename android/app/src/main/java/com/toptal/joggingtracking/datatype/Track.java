@@ -1,6 +1,7 @@
 package com.toptal.joggingtracking.datatype;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -10,7 +11,6 @@ public class Track implements Serializable {
     final static SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
     private Date date;
     private int duration;
-    private float speed;
     private int distance;
     private String userid;
     private String id;
@@ -59,14 +59,6 @@ public class Track implements Serializable {
 
     public void setUserid(String userid) {
         this.userid = userid;
-    }
-
-    public float getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(float speed) {
-        this.speed = speed;
     }
 
     public String getId() {
@@ -134,6 +126,7 @@ public class Track implements Serializable {
     }
 
     public String getFormatedSpeed() {
-        return speed * 3.6 + " Km/h";
+        //DecimalFormat.getInstance().format(((double)distance * 3.6) / duration);
+        return DecimalFormat.getInstance().format(((double)distance * 3.6) / duration) + " Km/h";
     }
 }
