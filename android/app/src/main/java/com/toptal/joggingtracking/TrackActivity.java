@@ -1,8 +1,5 @@
 package com.toptal.joggingtracking;
 
-import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
@@ -89,7 +86,7 @@ public class TrackActivity extends AppCompatActivity {
                     km.setValue(tmp.getNumOfKm());
                     dm.setValue(tmp.getNumOfDm());
                 }
-                AlertDialog.Builder b = new AlertDialog.Builder(TrackActivity.this).setTitle("Set time").setView(view);
+                AlertDialog.Builder b = new AlertDialog.Builder(TrackActivity.this).setTitle("Set distance").setView(view);
                 b.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -134,7 +131,7 @@ public class TrackActivity extends AppCompatActivity {
                         "30s", "31s", "32s", "33s", "34s", "35s", "36s", "37s", "38s", "39s",
                         "40s", "41s", "42s", "43s", "44s", "45s", "46s", "47s", "48s", "49s",
                         "50s", "51s", "52s", "53s", "54s", "55s", "56s", "57s", "58s", "59s"});
-                AlertDialog.Builder b = new AlertDialog.Builder(TrackActivity.this).setTitle("Set time").setView(view);
+                AlertDialog.Builder b = new AlertDialog.Builder(TrackActivity.this).setTitle("Set duration").setView(view);
                 b.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -316,7 +313,7 @@ public class TrackActivity extends AppCompatActivity {
 
         @Override
         protected Response doInBackground(Void... params) {
-            String token = getAuthToken();
+            String token = Util.getAuthToken(TrackActivity.this);
             try {
                 HttpUrl.Builder builder = new HttpUrl.Builder()
                         .scheme("http")
@@ -350,7 +347,7 @@ public class TrackActivity extends AppCompatActivity {
         protected void onPostExecute(final Response response) {
             mTrackTask = null;
             if (response != null) {
-                if (response.code() == 201) {
+                if (response.code() == 200 || response.code() == 201) {
                     setResult(RESULT_OK);
                     finish();
                 } else {
@@ -365,16 +362,5 @@ public class TrackActivity extends AppCompatActivity {
         protected void onCancelled() {
             mTrackTask = null;
         }
-    }
-
-    public String getAuthToken() {
-        String token = null;
-        try {
-            token = AccountManager.get(this).blockingGetAuthToken(Util.getAccount(this), "Bearer", false);
-        } catch (OperationCanceledException | IOException | AuthenticatorException e) {
-            e.printStackTrace();
-        }
-
-        return "Bearer " + token;
     }
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
 	"git.toptal.com/backend/data"
@@ -26,27 +27,6 @@ type customClaims struct {
 type render struct {
 	Token string   `json:"token"`
 	Roles []string `json:"roles"`
-}
-
-type userDto struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func (u *userDto) validate() (bool, *errorDto) {
-	if len([]rune(u.Username)) < 6 {
-		return false, &errorDto{
-			Error:   "USERNAME_ERROR",
-			Message: "Username must contain at least 6 characters",
-		}
-	}
-	if len([]rune(u.Password)) < 6 {
-		return false, &errorDto{
-			Error:   "PASSWORD_ERROR",
-			Message: "Password must contain at least 6 characters",
-		}
-	}
-	return true, nil
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -131,9 +111,46 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func manager(protectedPage http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+		roles := context.Get(req, "roles")
+		s := reflect.ValueOf(roles)
+		b := false
+		for i := 0; i < s.Len(); i++ {
+			if s.Index(i).String() == data.ManagerRole || s.Index(i).String() == data.AdminRole { // TODO find a better solution
+				b = true
+			}
+		}
+		if b {
+			protectedPage(res, req)
+		} else {
+			res.WriteHeader(http.StatusForbidden)
+		}
+	})
+}
+
+func admin(protectedPage http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+		roles := context.Get(req, "roles")
+		s := reflect.ValueOf(roles)
+		b := false
+		for i := 0; i < s.Len(); i++ {
+			if s.Index(i).String() == data.AdminRole { // TODO find a better solution
+				b = true
+			}
+		}
+		if b {
+			protectedPage(res, req)
+		} else {
+			res.WriteHeader(http.StatusForbidden)
+		}
+	})
+}
+
 func auth(protectedPage http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		req.Header.Get("Authorization")
 
 		if token, err := request.ParseFromRequestWithClaims(req, request.OAuth2Extractor, &customClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("my-secret"), nil

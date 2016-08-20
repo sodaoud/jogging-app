@@ -38,10 +38,11 @@ import okhttp3.ResponseBody;
 
 public class Util {
 
-    public static final String HOST = "192.168.1.35";
+    public static final String HOST = "192.168.1.39";
     public static final int PORT = 8080;
     public static final String SEGMENT_LOGIN = "login";
     public static final String SEGMENT_TRACK = "track";
+    public static final String SEGMENT_USER = "user";
     public static final String BASE_URL = "http://" + HOST + ":" + PORT;
     public static final String URL_LOGIN = BASE_URL + "/" + SEGMENT_LOGIN;
     public static final String URL_SIGN_UP = BASE_URL + "/signup";
@@ -140,6 +141,10 @@ public class Util {
         return account;
     }
 
+    public static boolean hasRole(Context ctx, String role) {
+        return am.getUserData(account, role) != null;
+    }
+
     public static AccountManager getAccountManager(Context ctx) {
         if (am == null)
             am = AccountManager.get(ctx);
@@ -185,6 +190,7 @@ public class Util {
     public static void setDefaultAccount(Context ctx, Account account) {
         PreferenceManager.getDefaultSharedPreferences(ctx).edit()
                 .putString(Util.USER_PREF, account.name).apply();
+        Util.account = account;
 
     }
 

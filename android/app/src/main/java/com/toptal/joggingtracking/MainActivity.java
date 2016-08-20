@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -31,6 +30,7 @@ import android.widget.TextView;
 
 import com.toptal.joggingtracking.fragments.JoggingFragment;
 import com.toptal.joggingtracking.fragments.ReportFragment;
+import com.toptal.joggingtracking.fragments.UsersFragment;
 import com.toptal.joggingtracking.util.Util;
 
 import java.util.ArrayList;
@@ -59,18 +59,17 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        NavigationView navView = ((NavigationView) findViewById(R.id.nav_view));
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = JoggingFragment.newInstance();
         shownFragmentTag = String.valueOf(R.id.nav_list);
         fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
-        navView.setCheckedItem(R.id.nav_list);
+        navigationView.setCheckedItem(R.id.nav_list);
 
 
-            getAccountOrBackToWelcomeActivity();
+        getAccountOrBackToWelcomeActivity();
 
-        View header = navView.getHeaderView(0);
+        View header = navigationView.getHeaderView(0);
         header.findViewById(R.id.username).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,9 +87,7 @@ public class MainActivity extends AppCompatActivity
                     b.setAdapter(adapter, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            PreferenceManager.getDefaultSharedPreferences(MainActivity.this)
-                                    .edit().putString(Util.USER_PREF, list.get(which).name)
-                                    .apply();
+                            Util.setDefaultAccount(MainActivity.this, list.get(which));
 
                             Intent intent = getIntent();
                             finish();
@@ -109,7 +106,7 @@ public class MainActivity extends AppCompatActivity
                 b.setPositiveButton("Log out", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Util.logout(MainActivity.this,  new AccountManagerCallback<Boolean>() {
+                        Util.logout(MainActivity.this, new AccountManagerCallback<Boolean>() {
                             @Override
                             public void run(AccountManagerFuture<Boolean> arg0) {
                                 startActivity(new Intent(MainActivity.this, WelcomeActivity.class));
@@ -122,6 +119,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        if (Util.hasRole(this, Util.ADMIN) || Util.hasRole(this, Util.MANAGER))
+            navigationView.getMenu().findItem(R.id.nav_user_management).setVisible(true);
     }
 
     @Override
@@ -197,8 +196,8 @@ public class MainActivity extends AppCompatActivity
 //                fragment = ChequebooksFragment.newInstance();
             } else if (id == R.id.nav_params) {
 //                fragment = LanguagesFragment.newInstance();
-//            } else if (id == R.id.other_services) {
-//                fragment = OtherServicesFragment.newInstance();
+            } else if (id == R.id.nav_user_management) {
+                fragment = UsersFragment.newInstance();
             }
             transaction.add(R.id.container, fragment, tag);
         } else {
@@ -213,7 +212,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void getAccountOrBackToWelcomeActivity() {
-        if (Util.getAccount(this)==null) {
+        if (Util.getAccount(this) == null) {
             startActivity(new Intent(this, WelcomeActivity.class));
             finish();
         }

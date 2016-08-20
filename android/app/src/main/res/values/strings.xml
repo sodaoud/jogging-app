@@ -17,9 +17,9 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_settings">Settings</string>
+    <string name="action_settings">Parameters</string>
     <string name="list_items">List</string>
-    <string name="show_chart">Charts</string>
+    <string name="show_report">Reports</string>
     <string-array name="units">
         <item>Metric (Km)</item>
         <item>Imperial (Mile)</item>

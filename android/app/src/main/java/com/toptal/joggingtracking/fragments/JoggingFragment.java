@@ -106,7 +106,7 @@ public class JoggingFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_jogging, container, false);
+        View v = inflater.inflate(R.layout.fragment_list, container, false);
         list = (RecyclerView) v.findViewById(R.id.list);
         list.setHasFixedSize(true);
 
@@ -418,20 +418,28 @@ public class JoggingFragment extends Fragment {
                     .setTitle("Filter")
                     .setView(view)
                     .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Filter",
-                            new DialogInterface.OnClickListener() {
+                    .setPositiveButton("Filter", new DialogInterface.OnClickListener() {
 
-                                @Override
-                                public void onClick(DialogInterface arg0, int arg1) {
-                                    if (filter == null) filter = new Filter();
-                                    filter.order = order.getSelectedItemPosition() == 0 ? Filter.ORDER_DESC : Filter.ORDER_ASC;
-                                    if (beginCal != null)
-                                        filter.begin = dateFormatws.format(beginCal.getTime());
-                                    if (endCal != null)
-                                        filter.end = dateFormatws.format(endCal.getTime());
-                                    getTracks();
-                                }
-                            }).create();
+                        @Override
+                        public void onClick(DialogInterface arg0, int arg1) {
+                            if (filter == null) filter = new Filter();
+                            filter.order = order.getSelectedItemPosition() == 0 ? Filter.ORDER_DESC : Filter.ORDER_ASC;
+                            if (beginCal != null)
+                                filter.begin = dateFormatws.format(beginCal.getTime());
+                            if (endCal != null)
+                                filter.end = dateFormatws.format(endCal.getTime());
+                            getTracks();
+                        }
+                    })
+                    .setNeutralButton("Clear Filter", new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface arg0, int arg1) {
+                            filter = new Filter();
+                            getTracks();
+                        }
+                    })
+                    .create();
         }
 
         private void initListeners() {

@@ -6,13 +6,12 @@ import java.io.Serializable;
  * Created by sofiane on 8/19/16.
  */
 
-public class User implements Serializable {
-    private String id;
+public class UserDTO implements Serializable {
     private String username;
+    private String password;
     private String[] roles;
-    private Profile profile;
 
-    public User() {
+    public UserDTO() {
     }
 
     public String getUsername() {
@@ -31,19 +30,11 @@ public class User implements Serializable {
         this.roles = roles;
     }
 
-    public Profile getProfile() {
-        return profile;
+    public String getPassword() {
+        return password;
     }
 
-    public void setProfile(Profile profile) {
-        this.profile = profile;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

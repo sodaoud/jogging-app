@@ -34,7 +34,7 @@ func (t *Track) Validate() (bool, string) {
 const UserRole string = "USER"
 
 // ManagerRole declaration
-const ManagerRole string = "MANGER"
+const ManagerRole string = "MANAGER"
 
 // AdminRole declaration
 const AdminRole string = "ADMIN"
@@ -44,5 +44,16 @@ type User struct {
 	ID       bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Username string        `json:"username"`
 	Password []byte        `json:"-"`
-	Roles    []string      `json:"Roles"`
+	Roles    []string      `json:"roles"`
+	Profile  Profile       `json:"profile"`
+}
+
+// Profile of the user
+type Profile struct {
+	Unit      string  `json:"unit"`
+	LastName  string  `json:"lastname"`
+	FirstName string  `json:"firstname"`
+	Age       int     `json:"age"`
+	Sex       string  `json:"sex"`
+	Weight    float32 `json:"weight"`
 }
