@@ -3,6 +3,7 @@ package com.toptal.joggingtracking.fragments;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,8 +12,10 @@ import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,9 +23,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.toptal.joggingtracking.ProfileActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.UserActivity;
@@ -34,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -86,14 +93,14 @@ public class UsersFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 showNoServer(false);
-                getTracks();
+                getUsers();
             }
         });
-        mSwipeRefreshLayout = (SwipeRefreshLayout)v.findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                getTracks();
+                getUsers();
             }
         });
         adapter = new Adapter();
@@ -119,10 +126,10 @@ public class UsersFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        getTracks();
+        getUsers();
     }
 
-    private void getTracks() {
+    private void getUsers() {
         mSwipeRefreshLayout.setRefreshing(true);
         mUsersTask = new UsersTask();
         mUsersTask.execute((Void) null);
@@ -209,7 +216,7 @@ public class UsersFragment extends Fragment {
                                 getActivity().runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        getTracks();
+                                        getUsers();
                                     }
                                 });
                             } else {
@@ -264,11 +271,14 @@ public class UsersFragment extends Fragment {
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView mUsernameView;
             CircleImageView mAvatarView;
+            Toolbar toolbar;
 
             public ViewHolder(View v) {
                 super(v);
                 mUsernameView = (TextView) v.findViewById(R.id.username);
                 mAvatarView = (CircleImageView) v.findViewById(R.id.avatar);
+                toolbar = (Toolbar) v.findViewById(R.id.card_toolbar);
+                toolbar.inflateMenu(R.menu.user_card_menu);
             }
         }
 
@@ -291,12 +301,72 @@ public class UsersFragment extends Fragment {
                     startActivity(i);
                 }
             });
+            holder.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    Intent i;
+                    switch (item.getItemId()) {
+                        case R.id.edit:
+                            i = new Intent(getActivity(), UserActivity.class);
+                            i.putExtra(UserActivity.USER, user);
+                            getActivity().startActivity(i);
+                            return true;
+                        case R.id.delete:
+                            deleteUser(user);
+                            return true;
+                        case R.id.profile:
+                            i = new Intent(getActivity(), ProfileActivity.class);
+                            i.putExtra(ProfileActivity.USER, user);
+                            getActivity().startActivity(i);
+                            return true;
+                    }
+                    return false;
+                }
+            });
         }
 
         @Override
         public int getItemCount() {
             return users.size();
         }
+    }
+
+    private void deleteUser(final User user) {
+        new AlertDialog.Builder(getActivity())
+                .setTitle("Delete")
+                .setMessage("Are you sure you want to delete this entry?")
+                .setNegativeButton("No", null)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        HttpUrl.Builder builder = new HttpUrl.Builder()
+                                .scheme("http")
+                                .host(Util.HOST)
+                                .port(Util.PORT)
+                                .addPathSegment(Util.SEGMENT_USER)
+                                .addPathSegment(user.getId());
+                        Request request = new Request.Builder()
+                                .addHeader("Authorization", Util.getAuthToken(getActivity()))
+                                .url(builder.build())
+                                .delete()
+                                .build();
+                        client.newCall(request).enqueue(new Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+                            }
+
+                            @Override
+                            public void onResponse(Call call, Response response) throws IOException {
+                                if (response.code() == 200) {
+                                    getUsers();
+                                } else {
+                                    Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        });
+                    }
+                }).show();
     }
 
 }

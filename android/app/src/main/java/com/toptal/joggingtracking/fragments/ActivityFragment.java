@@ -22,6 +22,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,6 +32,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -441,6 +443,7 @@ public class ActivityFragment extends Fragment {
             TextView mDistanceView;
             TextView mSpeedView;
             TextView mUserView;
+            Toolbar toolbar;
 
             public ViewHolder(View v) {
                 super(v);
@@ -449,6 +452,8 @@ public class ActivityFragment extends Fragment {
                 mDistanceView = (TextView) v.findViewById(R.id.distance_field);
                 mSpeedView = (TextView) v.findViewById(R.id.speed_field);
                 mUserView = (TextView) v.findViewById(R.id.user_field);
+                toolbar = (Toolbar) v.findViewById(R.id.card_toolbar);
+                toolbar.inflateMenu(R.menu.track_menu);
                 if (admin) {
                     mUserView.setVisibility(View.VISIBLE);
                     v.findViewById(R.id.user).setVisibility(View.VISIBLE);
@@ -482,6 +487,24 @@ public class ActivityFragment extends Fragment {
                     startActivity(i);
                 }
             });
+            holder.toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.edit:
+                            Intent i = new Intent(getActivity(), TrackActivity.class);
+                            i.putExtra(TrackActivity.EDIT, true);
+                            i.putExtra(TrackActivity.TRACK, track);
+                            getActivity().startActivity(i);
+                            return true;
+                        case R.id.delete:
+                            new DeleteTask(track).execute();
+                            return true;
+                    }
+
+                    return false;
+                }
+            });
         }
 
         @Override
@@ -499,6 +522,54 @@ public class ActivityFragment extends Fragment {
             }
         }
         return user;
+    }
+
+    class DeleteTask extends AsyncTask<Void, Void, Response> {
+
+        Track track;
+
+        DeleteTask(Track track) {
+            this.track = track;
+        }
+
+        @Override
+        protected Response doInBackground(Void... params) {
+
+            HttpUrl.Builder builder = new HttpUrl.Builder()
+                    .scheme("http")
+                    .host(Util.HOST)
+                    .port(Util.PORT)
+                    .addPathSegment(Util.SEGMENT_TRACK)
+                    .addPathSegment(track.getId());
+            Request request = new Request.Builder()
+                    .addHeader("Authorization", Util.getAuthToken(getActivity()))
+                    .url(builder.build())
+                    .delete()
+                    .build();
+            try {
+                return client.newCall(request).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(final Response response) {
+            if (response != null) {
+                if (response.code() == 200) {
+                    refresh();
+                } else {
+                    Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+                }
+            }
+            Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+
+        }
+
+        @Override
+        protected void onCancelled() {
+        }
     }
 
     @SuppressLint({"SimpleDateFormat", "ValidFragment"})
