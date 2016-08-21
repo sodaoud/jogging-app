@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.util;
+package com.toptal.joggingtracking;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,11 +16,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.ProfileActivity;
-import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.datatype.UserDTO;
+import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,6 +54,7 @@ public class UserActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user);
+        getSupportActionBar().setTitle("Edit User");
 
         showUsername = (TextView) findViewById(R.id.show_username);
         usernameContainer = findViewById(R.id.username_container);

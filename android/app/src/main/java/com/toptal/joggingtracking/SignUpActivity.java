@@ -76,6 +76,7 @@ public class SignUpActivity extends AppCompatActivity {
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
+        getSupportActionBar().setTitle("Register");
         client = new OkHttpClient();
 
     }

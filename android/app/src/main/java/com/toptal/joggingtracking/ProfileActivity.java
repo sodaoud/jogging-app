@@ -49,6 +49,7 @@ public class ProfileActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        getSupportActionBar().setTitle("Edit Profile");
         mFirstName = (EditText) findViewById(R.id.first_name);
         mLastName = (EditText) findViewById(R.id.last_name);
         mSex = (AppCompatSpinner) findViewById(R.id.sex);

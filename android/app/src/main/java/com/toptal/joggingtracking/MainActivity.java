@@ -292,17 +292,6 @@ public class MainActivity extends AppCompatActivity
                 fragment = ActivityFragment.newInstance(false);
             } else if (id == R.id.nav_chart) {
                 fragment = ReportFragment.newInstance();
-//                Calendar cal = Calendar.getInstance();
-//                cal.set(Calendar.HOUR_OF_DAY, 0);
-//                cal.set(Calendar.MINUTE, 0);
-//                cal.set(Calendar.SECOND, 0);
-//                cal.set(Calendar.MILLISECOND, 0);
-//                cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-//                cal.add(Calendar.DAY_OF_MONTH, -7);
-//                Date begin = cal.getTime();
-//                cal.add(Calendar.DAY_OF_MONTH, 6);
-//                Date end = cal.getTime();
-//                fragment = ReportViewFragment.newInstance(begin, end);
             } else if (id == R.id.nav_params) {
                 Intent intent = new Intent(this, ProfileActivity.class);
                 intent.putExtra(ProfileActivity.USER, Util.getUser());

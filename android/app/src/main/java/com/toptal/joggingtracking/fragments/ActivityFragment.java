@@ -19,6 +19,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -123,6 +124,8 @@ public class ActivityFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_list, container, false);
         list = (RecyclerView) v.findViewById(R.id.list);
         list.setHasFixedSize(true);
+
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("Jogging List");
 
         mLayoutManager = new LinearLayoutManager(getContext());
         list.setLayoutManager(mLayoutManager);

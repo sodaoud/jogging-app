@@ -70,6 +70,7 @@ public class TrackActivity extends AppCompatActivity {
         setContentView(R.layout.activity_track);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Edit Jogging");
 
         edit = getIntent().getBooleanExtra(EDIT, true);
         track = (Track) getIntent().getSerializableExtra(TRACK);

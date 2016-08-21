@@ -13,6 +13,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -30,7 +31,7 @@ import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.ProfileActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.util.UserActivity;
+import com.toptal.joggingtracking.UserActivity;
 import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
@@ -76,6 +77,8 @@ public class UsersFragment extends Fragment {
         setHasOptionsMenu(true);
         client = new OkHttpClient();
         users = new ArrayList<>();
+
+        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("User List");
     }
 
     @Override
