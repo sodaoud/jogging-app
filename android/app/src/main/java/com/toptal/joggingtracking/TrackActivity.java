@@ -93,15 +93,15 @@ public class TrackActivity extends AppCompatActivity {
                 dm.setWrapSelectorWheel(true);
                 km.setWrapSelectorWheel(true);
                 if (tmp.getDistance() >= 0) {
-                    km.setValue(tmp.getNumOfKm());
-                    dm.setValue(tmp.getNumOfDm());
+                    km.setValue(Util.getNumOfKm(tmp.getDistance()));
+                    dm.setValue(Util.getNumOfDm(tmp.getDistance()));
                 }
                 AlertDialog.Builder b = new AlertDialog.Builder(TrackActivity.this).setTitle("Set distance").setView(view);
                 b.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         tmp.setDistance(km.getValue() * 1000 + dm.getValue() * 10);
-                        showDistance.setText(tmp.getFormatedDistance());
+                        showDistance.setText(Util.formatDistance(tmp.getDistance()));
                     }
                 });
                 b.setNegativeButton("Cancel", null);
@@ -200,7 +200,7 @@ public class TrackActivity extends AppCompatActivity {
     private void setValues() {
         if (track != null) {
             showDate.setText(track.getFormatedDate());
-            showDistance.setText(track.getFormatedDistance());
+            showDistance.setText(Util.formatDistance(track.getDistance()));
             showDuration.setText(track.getFormatedDuration());
             tmp.setDate(track.getDate());
             tmp.setDuration(track.getDuration());

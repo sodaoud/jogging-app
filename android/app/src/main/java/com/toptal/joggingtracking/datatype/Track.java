@@ -1,7 +1,6 @@
 package com.toptal.joggingtracking.datatype;
 
 import java.io.Serializable;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -100,33 +99,34 @@ public class Track implements Serializable {
     public int getNumOfSeconds() {
         return duration - getNumOfHours() * 3600 - getNumOfMinutes() * 60;
     }
-
-    public String getFormatedDistance() {
-        StringBuilder b = new StringBuilder();
-        int km = getNumOfKm();
-        int dm = getNumOfDm();
-        b.append(km).append(".");
-        if (dm < 10) {
-            b.append("0");
-        }
-        b.append(dm).append(" Km");
-        return b.toString();
-    }
-
+//
+//    public String getFormatedDistance() {
+//        StringBuilder b = new StringBuilder();
+//        int km = getNumOfKm();
+//        int dm = getNumOfDm();
+//        b.append(km).append(".");
+//        if (dm < 10) {
+//            b.append("0");
+//        }
+//        b.append(dm).append(" Km");
+//        return b.toString();
+//    }
+//
+//
+//    public int getNumOfKm() {
+//        return distance / 1000;
+//    }
+//
+//    public int getNumOfDm() {
+//        return (distance - getNumOfKm() * 1000) / 10;
+//    }
+//
+//    public String getFormatedSpeed() {
+//        //DecimalFormat.getInstance().format(((double)distance * 3.6) / duration);
+//        return DecimalFormat.getInstance().format(((double)distance * 3.6) / duration) + " Km/h";
+//    }
     public String getFormatedDate() {
         return sdf.format(date);
     }
 
-    public int getNumOfKm() {
-        return distance / 1000;
-    }
-
-    public int getNumOfDm() {
-        return (distance - getNumOfKm() * 1000) / 10;
-    }
-
-    public String getFormatedSpeed() {
-        //DecimalFormat.getInstance().format(((double)distance * 3.6) / duration);
-        return DecimalFormat.getInstance().format(((double)distance * 3.6) / duration) + " Km/h";
-    }
 }

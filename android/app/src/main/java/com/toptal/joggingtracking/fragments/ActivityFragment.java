@@ -125,7 +125,7 @@ public class ActivityFragment extends Fragment {
         list = (RecyclerView) v.findViewById(R.id.list);
         list.setHasFixedSize(true);
 
-        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("Jogging List");
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle("Jogging List");
 
         mLayoutManager = new LinearLayoutManager(getContext());
         list.setLayoutManager(mLayoutManager);
@@ -476,9 +476,9 @@ public class ActivityFragment extends Fragment {
         public void onBindViewHolder(ViewHolder holder, int position) {
             final Track track = tracks.get(position);
             holder.mDateView.setText(track.getFormatedDate());
-            holder.mDurationView.setText(track.getFormatedDuration());
-            holder.mDistanceView.setText(track.getFormatedDistance());
-            holder.mSpeedView.setText(track.getFormatedSpeed());
+            holder.mDurationView.setText(Util.formatDuration(track.getDuration()));
+            holder.mDistanceView.setText(Util.formatDistance(track.getDistance()));
+            holder.mSpeedView.setText(Util.formatSpeed(track.getDistance(), track.getDuration()));
             if (admin)
                 holder.mUserView.setText(getUserById(track.getUserid()).getUsername());
             holder.itemView.setOnClickListener(new View.OnClickListener() {

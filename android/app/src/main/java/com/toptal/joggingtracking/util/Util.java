@@ -270,18 +270,17 @@ public class Util {
         return b.toString();
     }
 
-    private static int getNumOfHours(int duration) {
+    public static int getNumOfHours(int duration) {
         return duration / 3600;
     }
 
-    private static int getNumOfMinutes(int duration) {
+    public static int getNumOfMinutes(int duration) {
         return (duration - getNumOfHours(duration) * 3600) / 60;
     }
 
-    private static int getNumOfSeconds(int duration) {
+    public static int getNumOfSeconds(int duration) {
         return duration - getNumOfHours(duration) * 3600 - getNumOfMinutes(duration) * 60;
     }
-
 
     public static String formatDistance(int distance) {
         StringBuilder b = new StringBuilder();
@@ -295,11 +294,11 @@ public class Util {
         return b.toString();
     }
 
-    private static int getNumOfKm(int distance) {
+    public static int getNumOfKm(int distance) {
         return distance / 1000;
     }
 
-    private static int getNumOfDm(int distance) {
+    public static int getNumOfDm(int distance) {
         return (distance - getNumOfKm(distance) * 1000) / 10;
     }
 
