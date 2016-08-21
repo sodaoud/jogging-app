@@ -22,6 +22,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -60,6 +63,7 @@ public class Util {
 
     private static Account account;
     private static AccountManager am;
+    private static SimpleDateFormat sdf;
 
     public static void getNewAuthToken(final Handler handler) {
         OkHttpClient client = new OkHttpClient();
@@ -220,4 +224,72 @@ public class Util {
         getAccountManager(ctx).removeAccount(getAccount(ctx), callback, null);
         account = null;
     }
+
+    public static String formatSpeed(int distance, int duration) {
+        return DecimalFormat.getInstance().format(((double) distance * 3.6) / duration) + " Km/h";
+    }
+
+    public static String formatSpeed(double speed) {
+        return DecimalFormat.getInstance().format(speed * 3.6) + " Km/h";
+    }
+
+    public static String formatDuration(int duration) {
+        StringBuilder b = new StringBuilder();
+        int h = getNumOfHours(duration);
+        int m = getNumOfMinutes(duration);
+        int s = getNumOfSeconds(duration);
+        if (h < 10) {
+            b.append("0");
+        }
+        b.append(h).append(":");
+        if (m < 10) {
+            b.append("0");
+        }
+        b.append(m).append(":");
+        if (s < 10) {
+            b.append("0");
+        }
+        b.append(s);
+        return b.toString();
+    }
+
+    private static int getNumOfHours(int duration) {
+        return duration / 3600;
+    }
+
+    private static int getNumOfMinutes(int duration) {
+        return (duration - getNumOfHours(duration) * 3600) / 60;
+    }
+
+    private static int getNumOfSeconds(int duration) {
+        return duration - getNumOfHours(duration) * 3600 - getNumOfMinutes(duration) * 60;
+    }
+
+
+    public static String formatDistance(int distance) {
+        StringBuilder b = new StringBuilder();
+        int km = getNumOfKm(distance);
+        int dm = getNumOfDm(distance);
+        b.append(km).append(".");
+        if (dm < 10) {
+            b.append("0");
+        }
+        b.append(dm).append(" Km");
+        return b.toString();
+    }
+
+    private static int getNumOfKm(int distance) {
+        return distance / 1000;
+    }
+
+    private static int getNumOfDm(int distance) {
+        return (distance - getNumOfKm(distance) * 1000) / 10;
+    }
+
+    public static SimpleDateFormat getSimpleDateFormat() {
+        if (sdf == null)
+            sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        return sdf;
+    }
+
 }

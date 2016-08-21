@@ -29,12 +29,14 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.toptal.joggingtracking.fragments.ActivityFragment;
-import com.toptal.joggingtracking.fragments.ReportFragment;
+import com.toptal.joggingtracking.fragments.ReportViewFragment;
 import com.toptal.joggingtracking.fragments.UsersFragment;
 import com.toptal.joggingtracking.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity
@@ -121,7 +123,7 @@ public class MainActivity extends AppCompatActivity
         if (Util.hasRole(this, Util.ADMIN) || Util.hasRole(this, Util.MANAGER))
             navigationView.getMenu().findItem(R.id.nav_user_management).setVisible(true);
 
-        if (Util.hasRole(this, Util.ADMIN) )
+        if (Util.hasRole(this, Util.ADMIN))
             navigationView.getMenu().findItem(R.id.nav_activity_management).setVisible(true);
     }
 
@@ -194,7 +196,17 @@ public class MainActivity extends AppCompatActivity
             if (id == R.id.nav_list) {
                 fragment = ActivityFragment.newInstance(false);
             } else if (id == R.id.nav_chart) {
-                fragment = ReportFragment.newInstance();
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.HOUR_OF_DAY,0);
+                cal.set(Calendar.MINUTE,0);
+                cal.set(Calendar.SECOND,0);
+                cal.set(Calendar.MILLISECOND,0);
+                cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+                cal.add(Calendar.DAY_OF_MONTH, -7);
+                Date begin = cal.getTime();
+                cal.add(Calendar.DAY_OF_MONTH, 6);
+                Date end = cal.getTime();
+                fragment = ReportViewFragment.newInstance(begin, end);
             } else if (id == R.id.nav_params) {
             } else if (id == R.id.nav_user_management) {
                 fragment = UsersFragment.newInstance();
