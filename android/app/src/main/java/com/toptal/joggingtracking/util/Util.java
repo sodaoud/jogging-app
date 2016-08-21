@@ -16,6 +16,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 
 import com.google.gson.Gson;
+import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.TokenUtil;
 import com.toptal.joggingtracking.datatype.User;
 
@@ -106,6 +107,13 @@ public class Util {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
+                        } else {
+                            Message m = new Message();
+                            m.what = FAIL;
+                            ErrorUtil err = ErrorUtil.getFromString(body.string());
+                            m.obj = err.getError();
+                            handler.dispatchMessage(m);
+                            return;
                         }
                     }
 

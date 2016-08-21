@@ -1,5 +1,7 @@
 package com.toptal.joggingtracking.fragments;
 
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
@@ -34,6 +36,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.TrackActivity;
+import com.toptal.joggingtracking.WelcomeActivity;
 import com.toptal.joggingtracking.datatype.Track;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
@@ -350,17 +353,36 @@ public class ActivityFragment extends Fragment {
                 } else if (response.code() == 401) {
                     Util.getNewAuthToken(new Handler() {
                         @Override
-                        public void handleMessage(Message msg) {
-                            if (msg.what == Util.SUCCES) {
-                                getActivity().runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
+                        public void handleMessage(final Message msg) {
+                            getActivity().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (msg.what == Util.SUCCES) {
                                         getTracks();
+                                    } else {
+                                        if (msg.obj != null && (msg.obj.equals("PASSWORD_ERROR") || msg.obj.equals("USERNAME_ERROR"))) {
+                                            Util.logout(getActivity(), new AccountManagerCallback<Boolean>() {
+                                                @Override
+                                                public void run(AccountManagerFuture<Boolean> future) {
+                                                    new AlertDialog.Builder(getActivity())
+                                                            .setTitle("Logout")
+                                                            .setMessage("Your account has been edited please log back")
+                                                            .setCancelable(false)
+                                                            .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                                                @Override
+                                                                public void onClick(DialogInterface dialog, int which) {
+                                                                    startActivity(new Intent(getActivity(), WelcomeActivity.class));
+                                                                    getActivity().finish();
+                                                                }
+                                                            })
+                                                            .show();
+                                                }
+                                            });
+                                        }
+                                        showNoServer(true);
                                     }
-                                });
-                            } else {
-                                showNoServer(true);
-                            }
+                                }
+                            });
                         }
                     });
                 } else {
