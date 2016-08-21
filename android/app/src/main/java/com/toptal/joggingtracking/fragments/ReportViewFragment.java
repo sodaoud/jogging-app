@@ -53,9 +53,10 @@ public class ReportViewFragment extends Fragment {
     private TracksTask mTracksTask;
     private OkHttpClient client;
     private Track[] tracks;
+    private TextView mTotalRuns;
 
 
-    public static Fragment newInstance(Date begin, Date end) {
+    public static ReportViewFragment newInstance(Date begin, Date end) {
 
         ReportViewFragment fragment = new ReportViewFragment();
         Bundle args = new Bundle();
@@ -80,6 +81,7 @@ public class ReportViewFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +113,7 @@ public class ReportViewFragment extends Fragment {
         mDistance = (TextView) v.findViewById(R.id.distance);
         mMaxDistance = (TextView) v.findViewById(R.id.max_distance);
         mMaxDuration = (TextView) v.findViewById(R.id.max_duration);
+        mTotalRuns = (TextView) v.findViewById(R.id.total_runs);
         mMaxSpeed = (TextView) v.findViewById(R.id.max_speed);
         return v;
     }
@@ -210,6 +213,6 @@ public class ReportViewFragment extends Fragment {
         mMaxDuration.setText(Util.formatDuration(maxDuration));
         mDistance.setText(Util.formatDistance(distance));
         mMaxDistance.setText(Util.formatDistance(maxDistance));
+        mTotalRuns.setText("" + tracks.length);
     }
-
 }

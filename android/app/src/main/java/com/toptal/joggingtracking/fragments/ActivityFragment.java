@@ -559,8 +559,7 @@ public class ActivityFragment extends Fragment {
             if (response != null) {
                 if (response.code() == 200) {
                     refresh();
-                } else {
-                    Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+                    return;
                 }
             }
             Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();

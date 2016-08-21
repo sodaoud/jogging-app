@@ -33,15 +33,13 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.fragments.ActivityFragment;
-import com.toptal.joggingtracking.fragments.ReportViewFragment;
+import com.toptal.joggingtracking.fragments.ReportFragment;
 import com.toptal.joggingtracking.fragments.UsersFragment;
 import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import okhttp3.HttpUrl;
@@ -293,17 +291,18 @@ public class MainActivity extends AppCompatActivity
             if (id == R.id.nav_list) {
                 fragment = ActivityFragment.newInstance(false);
             } else if (id == R.id.nav_chart) {
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.HOUR_OF_DAY, 0);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
-                cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-                cal.add(Calendar.DAY_OF_MONTH, -7);
-                Date begin = cal.getTime();
-                cal.add(Calendar.DAY_OF_MONTH, 6);
-                Date end = cal.getTime();
-                fragment = ReportViewFragment.newInstance(begin, end);
+                fragment = ReportFragment.newInstance();
+//                Calendar cal = Calendar.getInstance();
+//                cal.set(Calendar.HOUR_OF_DAY, 0);
+//                cal.set(Calendar.MINUTE, 0);
+//                cal.set(Calendar.SECOND, 0);
+//                cal.set(Calendar.MILLISECOND, 0);
+//                cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
+//                cal.add(Calendar.DAY_OF_MONTH, -7);
+//                Date begin = cal.getTime();
+//                cal.add(Calendar.DAY_OF_MONTH, 6);
+//                Date end = cal.getTime();
+//                fragment = ReportViewFragment.newInstance(begin, end);
             } else if (id == R.id.nav_params) {
                 Intent intent = new Intent(this, ProfileActivity.class);
                 intent.putExtra(ProfileActivity.USER, Util.getUser());
