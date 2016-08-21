@@ -8,13 +8,29 @@ import java.io.Serializable;
 
 public class Profile implements Serializable{
     private String unit;
-    private String lastName;
-    private String firstName;
+    private String lastname;
+    private String firstname;
     private int age;
     private String sex;
     private double weight;
 
     public Profile() {
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
     }
 
     public String getUnit() {
@@ -23,22 +39,6 @@ public class Profile implements Serializable{
 
     public void setUnit(String unit) {
         this.unit = unit;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
     }
 
     public int getAge() {

@@ -7,14 +7,4 @@
         android:orderInCategory="1"
         android:title="Done"
         app:showAsAction="always" />
-    <item
-        android:id="@+id/delete"
-        android:orderInCategory="100"
-        android:title="Delete"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/profile"
-        android:orderInCategory="100"
-        android:title="Edit Profile"
-        app:showAsAction="never" />
 </menu>

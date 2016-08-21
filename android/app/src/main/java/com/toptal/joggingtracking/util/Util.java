@@ -17,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 
 import com.google.gson.Gson;
 import com.toptal.joggingtracking.datatype.TokenUtil;
+import com.toptal.joggingtracking.datatype.User;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,12 +42,13 @@ import okhttp3.ResponseBody;
 
 public class Util {
 
-    public static final String HOST = "192.168.1.39";
+    public static final String HOST = "192.168.1.35";
     public static final int PORT = 8080;
     public static final String SEGMENT_LOGIN = "login";
     public static final String SEGMENT_TRACK = "track";
     public static final String ALL = "all";
     public static final String SEGMENT_USER = "user";
+    public static final String SEGMENT_PROFILE = "profile";
     public static final String BASE_URL = "http://" + HOST + ":" + PORT;
     public static final String URL_LOGIN = BASE_URL + "/" + SEGMENT_LOGIN;
     public static final String URL_SIGN_UP = BASE_URL + "/signup";
@@ -62,6 +64,7 @@ public class Util {
     public static final int SUCCES = -13;
 
     private static Account account;
+    private static User user;
     private static AccountManager am;
     private static SimpleDateFormat sdf;
 
@@ -146,7 +149,12 @@ public class Util {
         return account;
     }
 
-    public static boolean hasRole(Context ctx, String role) {
+    public static boolean hasRole(String role) {
+        if (user != null) {
+            for (String r : user.getRoles()) {
+                if (r.equals(role)) return true;
+            }
+        }
         return am.getUserData(account, role) != null;
     }
 
@@ -226,6 +234,7 @@ public class Util {
     }
 
     public static String formatSpeed(int distance, int duration) {
+        if (duration == 0) return "0 Km/h";
         return DecimalFormat.getInstance().format(((double) distance * 3.6) / duration) + " Km/h";
     }
 
@@ -292,4 +301,11 @@ public class Util {
         return sdf;
     }
 
+    public static void setUser(User user) {
+        Util.user = user;
+    }
+
+    public static User getUser() {
+        return user;
+    }
 }

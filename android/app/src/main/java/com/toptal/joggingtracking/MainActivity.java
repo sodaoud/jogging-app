@@ -7,6 +7,7 @@ import android.accounts.AccountManagerFuture;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -27,24 +28,36 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.fragments.ActivityFragment;
 import com.toptal.joggingtracking.fragments.ReportViewFragment;
 import com.toptal.joggingtracking.fragments.UsersFragment;
 import com.toptal.joggingtracking.util.Util;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final int GET_ACCOUNTS_REQUEST_CODE = 8712;
     private static final int REQ_LOGIN = 237;
+    private static final int REQ_PROFILE = 9123;
     private String shownFragmentTag = null;
+    private OkHttpClient client;
+    private NavigationView navigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +72,7 @@ public class MainActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -119,17 +132,98 @@ public class MainActivity extends AppCompatActivity
                 b.show();
             }
         });
+        client = new OkHttpClient();
+    }
 
-        if (Util.hasRole(this, Util.ADMIN) || Util.hasRole(this, Util.MANAGER))
-            navigationView.getMenu().findItem(R.id.nav_user_management).setVisible(true);
+    private void refreshNavView() {
+        navigationView.getMenu().findItem(R.id.nav_user_management).setVisible(Util.hasRole(Util.ADMIN) || Util.hasRole(Util.MANAGER));
+        navigationView.getMenu().findItem(R.id.nav_activity_management).setVisible(Util.hasRole(Util.ADMIN));
+        navigationView.getMenu().findItem(R.id.nav_list).setVisible(Util.hasRole(Util.USER));
+        navigationView.getMenu().findItem(R.id.nav_chart).setVisible(Util.hasRole(Util.USER));
+        navigationView.getMenu().findItem(R.id.nav_params).setVisible(Util.hasRole(Util.USER));
+    }
 
-        if (Util.hasRole(this, Util.ADMIN))
-            navigationView.getMenu().findItem(R.id.nav_activity_management).setVisible(true);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshNavView();
+        new UserTask().execute();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
+    }
+
+    class UserTask extends AsyncTask<Void, Void, Response> {
+
+        UserTask() {
+        }
+
+        @Override
+        protected Response doInBackground(Void... params) {
+            String token = Util.getAuthToken(MainActivity.this);
+            try {
+                HttpUrl.Builder builder;
+                builder = new HttpUrl.Builder()
+                        .scheme("http")
+                        .host(Util.HOST)
+                        .port(Util.PORT)
+                        .addPathSegment(Util.SEGMENT_USER)
+                        .addPathSegment("c");
+
+                Request.Builder requestBuilder = new Request.Builder()
+                        .addHeader("Authorization", token)
+                        .url(builder.build())
+                        .get();
+                return client.newCall(requestBuilder.build()).execute();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(final Response response) {
+            if (response != null) {
+                if (response.code() == 200) {
+                    Gson gson = new Gson();
+                    try {
+                        User user = gson.fromJson(response.body().string(), User.class);
+                        Util.setUser(user);
+                        refreshNavView();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else if (response.code() == 204) {
+                    Util.logout(MainActivity.this, new AccountManagerCallback<Boolean>() {
+                        @Override
+                        public void run(AccountManagerFuture<Boolean> future) {
+                            new AlertDialog.Builder(MainActivity.this)
+                                    .setTitle("Logout")
+                                    .setMessage("Your account has been deleted")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            startActivity(new Intent(MainActivity.this, WelcomeActivity.class));
+                                            finish();
+                                        }
+                                    })
+                                    .show();
+                        }
+                    });
+                }
+            } else {
+                Toast.makeText(MainActivity.this, "Can't reach server", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+        }
     }
 
     @Override
@@ -139,6 +233,9 @@ public class MainActivity extends AppCompatActivity
             Intent intent = getIntent();
             finish();
             startActivity(intent);
+        }
+        if (requestCode == REQ_PROFILE && resultCode == RESULT_OK) {
+            Util.setUser((User) data.getSerializableExtra(ProfileActivity.USER));
         }
     }
 
@@ -197,10 +294,10 @@ public class MainActivity extends AppCompatActivity
                 fragment = ActivityFragment.newInstance(false);
             } else if (id == R.id.nav_chart) {
                 Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.HOUR_OF_DAY,0);
-                cal.set(Calendar.MINUTE,0);
-                cal.set(Calendar.SECOND,0);
-                cal.set(Calendar.MILLISECOND,0);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
                 cal.add(Calendar.DAY_OF_MONTH, -7);
                 Date begin = cal.getTime();
@@ -208,6 +305,13 @@ public class MainActivity extends AppCompatActivity
                 Date end = cal.getTime();
                 fragment = ReportViewFragment.newInstance(begin, end);
             } else if (id == R.id.nav_params) {
+                Intent intent = new Intent(this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.USER, Util.getUser());
+                startActivityForResult(intent, REQ_PROFILE);
+
+                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                drawer.closeDrawer(GravityCompat.START);
+                return true;
             } else if (id == R.id.nav_user_management) {
                 fragment = UsersFragment.newInstance();
             } else if (id == R.id.nav_activity_management) {

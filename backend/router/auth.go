@@ -150,6 +150,16 @@ func hasRoleAdmin(roles []string) bool {
 	return b
 }
 
+func hasRoleManager(roles []string) bool {
+	b := false
+	for _, role := range roles {
+		if role == data.ManagerRole {
+			b = true
+		}
+	}
+	return b
+}
+
 func auth(protectedPage http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 

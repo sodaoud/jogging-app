@@ -21,8 +21,12 @@
     <string name="list_items">List</string>
     <string name="show_report">Reports</string>
     <string-array name="units">
-        <item>Metric (Km)</item>
-        <item>Imperial (Mile)</item>
+        <item>Km</item>
+        <item>Mile</item>
+    </string-array>
+    <string-array name="sex">
+        <item>Male</item>
+        <item>Female</item>
     </string-array>
     <string-array name="sorting">
         <item>Descending</item>

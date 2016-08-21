@@ -1,6 +1,7 @@
 package com.toptal.joggingtracking.util;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -15,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.toptal.joggingtracking.ProfileActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.datatype.ErrorUtil;
 import com.toptal.joggingtracking.datatype.User;
@@ -125,10 +127,22 @@ public class UserActivity extends AppCompatActivity {
             case R.id.delete:
                 deleteUser();
                 return true;
+            case R.id.profile:
+                Intent i = new Intent(this, ProfileActivity.class);
+                i.putExtra(ProfileActivity.USER, user);
+                startActivityForResult(i, 9123);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && requestCode == 9123) {
+            user = (User) data.getSerializableExtra(USER);
+        }
+    }
 
     private void saveUser() {
         if (!validate()) return;

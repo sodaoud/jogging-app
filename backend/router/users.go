@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
 	"git.toptal.com/backend/data"
@@ -70,7 +71,12 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	roles := u.Roles
 	if len(roles) == 0 {
-		roles = []string{data.UserRole}
+		dto := errorDto{
+			Error:   "ROLES_ERROR",
+			Message: "Accounts must have at least one role",
+		}
+		json.NewEncoder(w).Encode(dto)
+		return
 	}
 	user := data.User{
 		ID:       bson.NewObjectId(),
@@ -130,8 +136,39 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getProfile() {
-
+func getUser(w http.ResponseWriter, r *http.Request) {
+	var user data.User
+	if data.CheckConnection() {
+		session := data.Mongo.Copy()
+		defer session.Close()
+		id := context.Get(r, "userid").(bson.ObjectId)
+		c := session.DB("test").C("user")
+		if err := c.Find(bson.M{"_id": id}).One(&user); err != nil {
+			w.WriteHeader(http.StatusNoContent)
+			errorDto := errorDto{
+				Error:   "USER_NOT_FOUND",
+				Message: "Your account has been deleted",
+			}
+			json.NewEncoder(w).Encode(errorDto)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		errorDto := errorDto{
+			Error:   "DATABASE_ERROR",
+			Message: "DATABASE_ERROR",
+		}
+		json.NewEncoder(w).Encode(errorDto)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Json marshaling Error"))
+		log.Println("Json marshaling Error", err)
+		return
+	}
 }
 
 func getUsers(w http.ResponseWriter, r *http.Request) {
@@ -269,8 +306,48 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func updateUserProfile() {
+func updateUserProfile(w http.ResponseWriter, r *http.Request) {
+	var profile data.Profile
+	vars := mux.Vars(r)
+	id := vars["id"]
+	error := json.NewDecoder(r.Body).Decode(&profile)
+	if error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(error.Error()))
+		log.Println("Error Unmarshal", error)
+		return
+	}
 
+	if data.CheckConnection() {
+		session := data.Mongo.Copy()
+
+		defer session.Close()
+		c := session.DB("test").C("user")
+
+		change := mgo.Change{
+			Update:    bson.M{"$set": bson.M{"profile": profile}},
+			ReturnNew: true,
+		}
+
+		userid := context.Get(r, "userid").(bson.ObjectId)
+		if bson.ObjectIdHex(id) != userid &&
+			!hasRoleAdmin(context.Get(r, "roles").([]string)) &&
+			!hasRoleManager(context.Get(r, "roles").([]string)) {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		var user data.User
+		_, err := c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).Apply(change, &user)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Database Error"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(user)
+	}
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {

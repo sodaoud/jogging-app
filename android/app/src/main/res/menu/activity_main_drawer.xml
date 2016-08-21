@@ -22,6 +22,7 @@
             android:icon="@drawable/ic_account_circle"
             android:title="My profile" />
     </group>
+
     <item
         android:id="@+id/sub_menu_admin"
         android:title="Admin area">
