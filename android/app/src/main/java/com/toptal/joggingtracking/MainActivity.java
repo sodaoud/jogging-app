@@ -28,7 +28,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.toptal.joggingtracking.fragments.JoggingFragment;
+import com.toptal.joggingtracking.fragments.ActivityFragment;
 import com.toptal.joggingtracking.fragments.ReportFragment;
 import com.toptal.joggingtracking.fragments.UsersFragment;
 import com.toptal.joggingtracking.util.Util;
@@ -61,11 +61,10 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
-        Fragment fragment = JoggingFragment.newInstance();
+        Fragment fragment = ActivityFragment.newInstance(false);
         shownFragmentTag = String.valueOf(R.id.nav_list);
         fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
         navigationView.setCheckedItem(R.id.nav_list);
-
 
         getAccountOrBackToWelcomeActivity();
 
@@ -121,6 +120,9 @@ public class MainActivity extends AppCompatActivity
 
         if (Util.hasRole(this, Util.ADMIN) || Util.hasRole(this, Util.MANAGER))
             navigationView.getMenu().findItem(R.id.nav_user_management).setVisible(true);
+
+        if (Util.hasRole(this, Util.ADMIN) )
+            navigationView.getMenu().findItem(R.id.nav_activity_management).setVisible(true);
     }
 
     @Override
@@ -190,14 +192,14 @@ public class MainActivity extends AppCompatActivity
         }
         if (fragment == null) {
             if (id == R.id.nav_list) {
-                fragment = JoggingFragment.newInstance();
+                fragment = ActivityFragment.newInstance(false);
             } else if (id == R.id.nav_chart) {
                 fragment = ReportFragment.newInstance();
-//                fragment = ChequebooksFragment.newInstance();
             } else if (id == R.id.nav_params) {
-//                fragment = LanguagesFragment.newInstance();
             } else if (id == R.id.nav_user_management) {
                 fragment = UsersFragment.newInstance();
+            } else if (id == R.id.nav_activity_management) {
+                fragment = ActivityFragment.newInstance(true);
             }
             transaction.add(R.id.container, fragment, tag);
         } else {

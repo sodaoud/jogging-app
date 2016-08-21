@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"reflect"
 	"time"
 
 	"git.toptal.com/backend/data"
@@ -114,11 +113,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 func manager(protectedPage http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 
-		roles := context.Get(req, "roles")
-		s := reflect.ValueOf(roles)
+		roles := context.Get(req, "roles").([]string)
 		b := false
-		for i := 0; i < s.Len(); i++ {
-			if s.Index(i).String() == data.ManagerRole || s.Index(i).String() == data.AdminRole { // TODO find a better solution
+		for _, role := range roles {
+			if role == data.ManagerRole || role == data.AdminRole {
 				b = true
 			}
 		}
@@ -133,20 +131,23 @@ func manager(protectedPage http.HandlerFunc) http.HandlerFunc {
 func admin(protectedPage http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 
-		roles := context.Get(req, "roles")
-		s := reflect.ValueOf(roles)
-		b := false
-		for i := 0; i < s.Len(); i++ {
-			if s.Index(i).String() == data.AdminRole { // TODO find a better solution
-				b = true
-			}
-		}
-		if b {
+		roles := context.Get(req, "roles").([]string)
+		if hasRoleAdmin(roles) {
 			protectedPage(res, req)
 		} else {
 			res.WriteHeader(http.StatusForbidden)
 		}
 	})
+}
+
+func hasRoleAdmin(roles []string) bool {
+	b := false
+	for _, role := range roles {
+		if role == data.AdminRole {
+			b = true
+		}
+	}
+	return b
 }
 
 func auth(protectedPage http.HandlerFunc) http.HandlerFunc {

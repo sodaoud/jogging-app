@@ -46,4 +46,15 @@ public class User implements Serializable {
     public void setId(String id) {
         this.id = id;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof User && ((User) o).getId().equals(getId())) return true;
+        return super.equals(o);
+    }
+
+    @Override
+    public String toString() {
+        return username;
+    }
 }

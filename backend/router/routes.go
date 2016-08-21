@@ -6,6 +6,8 @@ import "github.com/gorilla/mux"
 func New() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/track", auth(getTracks)).Methods("GET")
+	r.HandleFunc("/track/group", auth(getTracksGrouped)).Methods("GET")
+	r.HandleFunc("/track/all", auth(admin(getAllTracks))).Methods("GET")
 	r.HandleFunc("/track/{id}", auth(getTrack)).Methods("GET")
 	r.HandleFunc("/track/{id}", auth(updateTrack)).Methods("PUT")
 	r.HandleFunc("/track/{id}", auth(deleteTrack)).Methods("DELETE")
@@ -14,6 +16,8 @@ func New() *mux.Router {
 	r.HandleFunc("/user", auth(manager(getUsers))).Methods("GET")
 	r.HandleFunc("/user/{id}", auth(manager(updateUser))).Methods("PUT")
 	r.HandleFunc("/user/{id}", auth(manager(deleteUser))).Methods("DELETE")
+	r.HandleFunc("/user/{id}/track", auth(admin(createTrackForUser))).Methods("POST")
+	r.HandleFunc("/user/{id}/track", auth(admin(getTrackForUser))).Methods("GET")
 	r.HandleFunc("/user", auth(manager(createUser))).Methods("POST")
 
 	r.HandleFunc("/signup", signup).Methods("POST")

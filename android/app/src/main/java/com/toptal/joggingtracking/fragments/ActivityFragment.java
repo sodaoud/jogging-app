@@ -1,6 +1,5 @@
 package com.toptal.joggingtracking.fragments;
 
-import android.accounts.AccountManager;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
@@ -34,6 +33,7 @@ import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.TrackActivity;
 import com.toptal.joggingtracking.datatype.Track;
+import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
@@ -55,21 +55,25 @@ import okhttp3.Response;
 /**
  * Created by sofiane on 8/16/16.
  */
-public class JoggingFragment extends Fragment {
+public class ActivityFragment extends Fragment {
 
+    public static final String ADMIN = "ADMIN";
+
+    private boolean admin;
     private RecyclerView list;
     private Adapter adapter;
     private OkHttpClient client;
     private View noServerView;
     private View mProgressView;
     private TracksTask mTracksTask;
+    private UsersTask mUsersTask;
     private List<Track> tracks;
-    private AccountManager am;
+    private User[] users;
     private LinearLayoutManager mLayoutManager;
     private Filter filter;
     private FloatingActionButton fab;
 
-    class Filter {
+    private class Filter {
 
         Filter() {
             order = ORDER_DESC;
@@ -82,13 +86,15 @@ public class JoggingFragment extends Fragment {
         String end;
         String order;
         String field = "date";
+        String userid;
     }
 
-    public static Fragment newInstance() {
+    public static Fragment newInstance(boolean admin) {
 
-        JoggingFragment fragment = new JoggingFragment();
-
-        fragment.setArguments(new Bundle());
+        ActivityFragment fragment = new ActivityFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ADMIN, admin);
+        fragment.setArguments(args);
         return fragment;
     }
 
@@ -98,8 +104,8 @@ public class JoggingFragment extends Fragment {
         setHasOptionsMenu(true);
         client = new OkHttpClient();
         tracks = new ArrayList<>();
-        am = AccountManager.get(getContext());
         filter = new Filter();
+        admin = getArguments().getBoolean(ADMIN, false);
     }
 
     @Override
@@ -137,6 +143,10 @@ public class JoggingFragment extends Fragment {
     private void createNewTrack() {
         Intent i = new Intent(getActivity(), TrackActivity.class);
         Bundle b = new Bundle();
+        if (admin) {
+            b.putBoolean(TrackActivity.ADMIN, admin);
+            b.putSerializable(TrackActivity.USERS, users);
+        }
         i.putExtras(b);
         startActivityForResult(i, 432);
     }
@@ -144,7 +154,17 @@ public class JoggingFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        getTracks();
+        if (admin)
+            getUsers();
+        else
+            getTracks();
+    }
+
+    private void getUsers() {
+        showNoServer(false);
+        mUsersTask = new UsersTask();
+        showProgress(true);
+        mUsersTask.execute((Void) null);
     }
 
     private void getTracks() {
@@ -174,7 +194,6 @@ public class JoggingFragment extends Fragment {
                 mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             }
         });
-
     }
 
     private void showNoServer(final boolean show) {
@@ -200,9 +219,9 @@ public class JoggingFragment extends Fragment {
 
     }
 
-    class TracksTask extends AsyncTask<Void, Void, Response> {
+    class UsersTask extends AsyncTask<Void, Void, Response> {
 
-        TracksTask() {
+        UsersTask() {
         }
 
         @Override
@@ -211,16 +230,96 @@ public class JoggingFragment extends Fragment {
                     .scheme("http")
                     .host(Util.HOST)
                     .port(Util.PORT)
-                    .addPathSegment(Util.SEGMENT_TRACK)
-                    .addQueryParameter("sort", filter.order + filter.field)
-                    .addQueryParameter("begin", filter.begin)
-                    .addQueryParameter("end", filter.end)
+                    .addPathSegment(Util.SEGMENT_USER)
                     .build();
             String token = Util.getAuthToken(getActivity());
             try {
                 Request request = new Request.Builder()
                         .addHeader("Authorization", token)
                         .url(url)
+                        .get()
+                        .build();
+                return client.newCall(request).execute();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(final Response response) {
+            mUsersTask = null;
+            Gson gson = new Gson();
+            if (response != null) {
+                String stringBody = null;
+                try {
+                    stringBody = response.body().string();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (response.code() == 200) {
+                    Type type = new TypeToken<User[]>() {
+                    }.getType();
+                    users = gson.fromJson(stringBody, type);
+                    getTracks();
+                } else if (response.code() == 401) {
+                    Util.getNewAuthToken(new Handler() {
+                        @Override
+                        public void handleMessage(Message msg) {
+                            if (msg.what == Util.SUCCES) {
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        getUsers();
+                                    }
+                                });
+                            } else {
+                                showNoServer(true);
+                            }
+                        }
+                    });
+                } else {
+                    if (users == null || users.length == 0)
+                        showNoServer(true);
+                }
+            } else {
+                if (users == null || users.length == 0)
+                    showNoServer(true);
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            mUsersTask = null;
+            showProgress(false);
+        }
+    }
+
+    class TracksTask extends AsyncTask<Void, Void, Response> {
+
+        TracksTask() {
+        }
+
+        @Override
+        protected Response doInBackground(Void... params) {
+            HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
+                    .scheme("http")
+                    .host(Util.HOST)
+                    .port(Util.PORT)
+                    .addPathSegment(Util.SEGMENT_TRACK);
+            if (admin)
+                urlBuilder.addPathSegment(Util.ALL);
+            urlBuilder
+                    .addQueryParameter("sort", filter.order + filter.field)
+                    .addQueryParameter("begin", filter.begin)
+                    .addQueryParameter("end", filter.end);
+            String token = Util.getAuthToken(getActivity());
+            try {
+                Request request = new Request.Builder()
+                        .addHeader("Authorization", token)
+                        .url(urlBuilder.build())
                         .get()
                         .build();
                 return client.newCall(request).execute();
@@ -323,6 +422,7 @@ public class JoggingFragment extends Fragment {
             TextView mDurationView;
             TextView mDistanceView;
             TextView mSpeedView;
+            TextView mUserView;
 
             public ViewHolder(View v) {
                 super(v);
@@ -330,6 +430,11 @@ public class JoggingFragment extends Fragment {
                 mDurationView = (TextView) v.findViewById(R.id.duration_field);
                 mDistanceView = (TextView) v.findViewById(R.id.distance_field);
                 mSpeedView = (TextView) v.findViewById(R.id.speed_field);
+                mUserView = (TextView) v.findViewById(R.id.user_field);
+                if (admin) {
+                    mUserView.setVisibility(View.VISIBLE);
+                    v.findViewById(R.id.user).setVisibility(View.VISIBLE);
+                }
             }
 
         }
@@ -348,6 +453,8 @@ public class JoggingFragment extends Fragment {
             holder.mDurationView.setText(track.getFormatedDuration());
             holder.mDistanceView.setText(track.getFormatedDistance());
             holder.mSpeedView.setText(track.getFormatedSpeed());
+            if (admin)
+                holder.mUserView.setText(getUserById(track.getUserid()).getUsername());
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -363,6 +470,17 @@ public class JoggingFragment extends Fragment {
         public int getItemCount() {
             return tracks.size();
         }
+    }
+
+    User getUserById(String userid) {
+        User user = null;
+        for (User u : users) {
+            if (u.getId().equals(userid)) {
+                user = u;
+                break;
+            }
+        }
+        return user;
     }
 
     @SuppressLint({"SimpleDateFormat", "ValidFragment"})

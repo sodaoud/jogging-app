@@ -42,6 +42,7 @@ public class Util {
     public static final int PORT = 8080;
     public static final String SEGMENT_LOGIN = "login";
     public static final String SEGMENT_TRACK = "track";
+    public static final String ALL = "all";
     public static final String SEGMENT_USER = "user";
     public static final String BASE_URL = "http://" + HOST + ":" + PORT;
     public static final String URL_LOGIN = BASE_URL + "/" + SEGMENT_LOGIN;

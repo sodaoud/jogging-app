@@ -130,7 +130,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getUser() {
+func getProfile() {
 
 }
 
