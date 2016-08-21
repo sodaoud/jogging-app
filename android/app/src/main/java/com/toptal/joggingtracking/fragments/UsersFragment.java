@@ -30,8 +30,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.ProfileActivity;
 import com.toptal.joggingtracking.R;
-import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.UserActivity;
+import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
@@ -40,8 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -129,11 +127,11 @@ public class UsersFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        mSwipeRefreshLayout.setRefreshing(true);
         getUsers();
     }
 
     private void getUsers() {
-        mSwipeRefreshLayout.setRefreshing(true);
         mUsersTask = new UsersTask();
         mUsersTask.execute((Void) null);
     }
@@ -342,34 +340,54 @@ public class UsersFragment extends Fragment {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        HttpUrl.Builder builder = new HttpUrl.Builder()
-                                .scheme("http")
-                                .host(Util.HOST)
-                                .port(Util.PORT)
-                                .addPathSegment(Util.SEGMENT_USER)
-                                .addPathSegment(user.getId());
-                        Request request = new Request.Builder()
-                                .addHeader("Authorization", Util.getAuthToken(getActivity()))
-                                .url(builder.build())
-                                .delete()
-                                .build();
-                        client.newCall(request).enqueue(new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
-                                Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
-                            }
-
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-                                if (response.code() == 200) {
-                                    getUsers();
-                                } else {
-                                    Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
-                                }
-                            }
-                        });
+                       new DeleteTask(user).execute();
                     }
                 }).show();
+    }
+
+    class DeleteTask extends AsyncTask<Void, Void, Response> {
+
+        private final User user;
+
+        DeleteTask(User user) {
+            this.user = user;
+        }
+
+        @Override
+        protected Response doInBackground(Void... params) {
+
+            HttpUrl.Builder builder = new HttpUrl.Builder()
+                    .scheme("http")
+                    .host(Util.HOST)
+                    .port(Util.PORT)
+                    .addPathSegment(Util.SEGMENT_USER)
+                    .addPathSegment(user.getId());
+            Request request = new Request.Builder()
+                    .addHeader("Authorization", Util.getAuthToken(getActivity()))
+                    .url(builder.build())
+                    .delete()
+                    .build();
+            try {
+                return client.newCall(request).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(final Response response) {
+            if (response.code() == 200) {
+                getUsers();
+            } else {
+                Toast.makeText(getActivity(), "Can not delete the entry", Toast.LENGTH_LONG).show();
+            }
+
+        }
+
+        @Override
+        protected void onCancelled() {
+        }
     }
 
 }

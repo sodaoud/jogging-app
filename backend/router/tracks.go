@@ -37,27 +37,23 @@ func getAllTracks(w http.ResponseWriter, r *http.Request) {
 	userid := r.URL.Query().Get("userid")
 	sort = &sortP
 	tracks := []data.Track{}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
-		defer session.Close()
-		c := session.DB("test").C("track")
-		dateRange := bson.M{"$gte": time.Time{}}
-		if begin != nil {
-			dateRange["$gte"] = *begin
-		}
-		if end != nil {
-			dateRange["$lte"] = *end
-		}
-		query := bson.M{"date": dateRange}
-		if userid != "" {
-			query["userid"] = bson.ObjectIdHex(userid)
-		}
-		c.Find(query).Sort(*sort).All(&tracks)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
-		return
+
+	c, session := data.C("track")
+	defer session.Close()
+
+	dateRange := bson.M{"$gte": time.Time{}}
+	if begin != nil {
+		dateRange["$gte"] = *begin
 	}
+	if end != nil {
+		dateRange["$lte"] = *end
+	}
+	query := bson.M{"date": dateRange}
+	if userid != "" {
+		query["userid"] = bson.ObjectIdHex(userid)
+	}
+	c.Find(query).Sort(*sort).All(&tracks)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(tracks); err != nil {
@@ -91,27 +87,23 @@ func getTrackForUser(w http.ResponseWriter, r *http.Request) {
 	userid := vars["id"]
 	sort = &sortP
 	tracks := []data.Track{}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
-		defer session.Close()
-		c := session.DB("test").C("track")
-		dateRange := bson.M{"$gte": time.Time{}}
-		if begin != nil {
-			dateRange["$gte"] = *begin
-		}
-		if end != nil {
-			dateRange["$lte"] = *end
-		}
-		query := bson.M{"date": dateRange}
-		if userid != "" {
-			query["userid"] = bson.ObjectIdHex(userid)
-		}
-		c.Find(query).Sort(*sort).All(&tracks)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
-		return
+
+	c, session := data.C("track")
+	defer session.Close()
+
+	dateRange := bson.M{"$gte": time.Time{}}
+	if begin != nil {
+		dateRange["$gte"] = *begin
 	}
+	if end != nil {
+		dateRange["$lte"] = *end
+	}
+	query := bson.M{"date": dateRange}
+	if userid != "" {
+		query["userid"] = bson.ObjectIdHex(userid)
+	}
+	c.Find(query).Sort(*sort).All(&tracks)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(tracks); err != nil {
@@ -143,24 +135,19 @@ func getTracks(w http.ResponseWriter, r *http.Request) {
 	}
 	sort = &sortP
 	tracks := []data.Track{}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
-		defer session.Close()
-		userid := context.Get(r, "userid").(bson.ObjectId)
-		c := session.DB("test").C("track")
-		dateRange := bson.M{"$gte": time.Time{}}
-		if begin != nil {
-			dateRange["$gte"] = *begin
-		}
-		if end != nil {
-			dateRange["$lte"] = *end
-		}
-		c.Find(bson.M{"userid": userid, "date": dateRange}).Sort(*sort).All(&tracks)
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
-		return
+
+	c, session := data.C("track")
+	defer session.Close()
+	userid := context.Get(r, "userid").(bson.ObjectId)
+	dateRange := bson.M{"$gte": time.Time{}}
+	if begin != nil {
+		dateRange["$gte"] = *begin
 	}
+	if end != nil {
+		dateRange["$lte"] = *end
+	}
+	c.Find(bson.M{"userid": userid, "date": dateRange}).Sort(*sort).All(&tracks)
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(tracks); err != nil {
@@ -175,21 +162,16 @@ func getTrack(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	var track data.Track
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
-		defer session.Close()
-		userid := context.Get(r, "userid").(bson.ObjectId)
-		c := session.DB("test").C("track")
-		if err := c.Find(bson.M{"userid": userid, "_id": bson.ObjectIdHex(id)}).One(&track); err != nil {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Not Found"))
-			return
-		}
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
+
+	c, session := data.C("track")
+	defer session.Close()
+	userid := context.Get(r, "userid").(bson.ObjectId)
+	if err := c.Find(bson.M{"userid": userid, "_id": bson.ObjectIdHex(id)}).One(&track); err != nil {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Not Found"))
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(track); err != nil {
@@ -219,21 +201,19 @@ func createTrack(w http.ResponseWriter, r *http.Request) {
 	track.ID = bson.NewObjectId()
 	track.UserID = context.Get(r, "userid").(bson.ObjectId)
 	track.Speed = float32(track.Distance) / float32(track.Duration)
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
 
-		defer session.Close()
-		c := session.DB("test").C("track")
-		err := c.Insert(track)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Database Error"))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(track)
+	c, session := data.C("track")
+	defer session.Close()
+	err := c.Insert(track)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Database Error"))
+		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(track)
+
 }
 
 func createTrackForUser(w http.ResponseWriter, r *http.Request) {
@@ -256,21 +236,20 @@ func createTrackForUser(w http.ResponseWriter, r *http.Request) {
 	track.ID = bson.NewObjectId()
 	track.UserID = bson.ObjectIdHex(userid)
 	track.Speed = float32(track.Distance) / float32(track.Duration)
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
 
-		defer session.Close()
-		c := session.DB("test").C("track")
-		err := c.Insert(track)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Database Error"))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(track)
+	c, session := data.C("track")
+
+	defer session.Close()
+	err := c.Insert(track)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Database Error"))
+		return
 	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(track)
+
 }
 
 func updateTrack(w http.ResponseWriter, r *http.Request) {
@@ -289,64 +268,61 @@ func updateTrack(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(mes))
 		return
 	}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
 
-		defer session.Close()
-		c := session.DB("test").C("track")
+	c, session := data.C("track")
+	defer session.Close()
 
-		//colQuerier := bson.M{"_id": bson.ObjectIdHex(id)}
-		change := mgo.Change{
-			Update: bson.M{"$set": bson.M{
-				"speed":    float32(track.Distance) / float32(track.Duration),
-				"duration": track.Duration,
-				"distance": track.Distance,
-				"date":     track.Date,
-			}},
-			ReturnNew: true,
-		}
-
-		userid := context.Get(r, "userid").(bson.ObjectId)
-		err := c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&track)
-		if userid != track.UserID && !hasRoleAdmin(context.Get(r, "roles").([]string)) {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		_, err = c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).Apply(change, &track)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Database Error"))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(track)
+	//colQuerier := bson.M{"_id": bson.ObjectIdHex(id)}
+	change := mgo.Change{
+		Update: bson.M{"$set": bson.M{
+			"speed":    float32(track.Distance) / float32(track.Duration),
+			"duration": track.Duration,
+			"distance": track.Distance,
+			"date":     track.Date,
+		}},
+		ReturnNew: true,
 	}
+
+	userid := context.Get(r, "userid").(bson.ObjectId)
+	err := c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&track)
+	if userid != track.UserID && !hasRoleAdmin(context.Get(r, "roles").([]string)) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	_, err = c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).Apply(change, &track)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Database Error"))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(track)
+
 }
 
 func deleteTrack(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
 
-		defer session.Close()
-		c := session.DB("test").C("track")
-		var track data.Track
-		userid := context.Get(r, "userid").(bson.ObjectId)
-		err := c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&track)
-		if userid != track.UserID && !hasRoleAdmin(context.Get(r, "roles").([]string)) {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		err = c.Remove(bson.M{"_id": bson.ObjectIdHex(id)})
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Database Error"))
-			return
-		}
-		w.WriteHeader(http.StatusOK)
+	c, session := data.C("track")
+
+	defer session.Close()
+	var track data.Track
+	userid := context.Get(r, "userid").(bson.ObjectId)
+	err := c.Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&track)
+	if userid != track.UserID && !hasRoleAdmin(context.Get(r, "roles").([]string)) {
+		w.WriteHeader(http.StatusForbidden)
+		return
 	}
+	err = c.Remove(bson.M{"_id": bson.ObjectIdHex(id)})
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Database Error"))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
 }

@@ -41,71 +41,59 @@ func login(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(dto)
 		return
 	}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
+	c, session := data.C("user")
+	defer session.Close()
 
-		defer session.Close()
-		c := session.DB("test").C("user")
-		var user data.User
-		err := c.Find(bson.M{"username": u.Username}).One(&user)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			dto := errorDto{
-				Error:   "USERNAME_ERROR",
-				Message: "The username does not exist",
-			}
-			json.NewEncoder(w).Encode(dto)
-			return
-		}
-		if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			dto := errorDto{
-				Error:   "PASSWORD_ERROR",
-				Message: "The password enterend does not match with the username",
-			}
-			json.NewEncoder(w).Encode(dto)
-			return
-		}
-		expireToken := time.Now().Add(time.Hour * 24).Unix()
-
-		claims := customClaims{
-			user.Username,
-			user.Roles,
-			user.ID,
-			jwt.StandardClaims{
-				ExpiresAt: expireToken,
-				Issuer:    "toptal.com",
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		signedToken, _ := token.SignedString([]byte("my-secret"))
-
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		t := render{
-			Token: signedToken,
-			Roles: user.Roles,
-		}
-		if err := json.NewEncoder(w).Encode(t); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			dto := errorDto{
-				Error:   "JSON_ERROR",
-				Message: err.Error(),
-			}
-			json.NewEncoder(w).Encode(dto)
-			log.Println("Json encoding Error", err)
-			return
-		}
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+	var user data.User
+	err := c.Find(bson.M{"username": u.Username}).One(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		dto := errorDto{
-			Error:   "DATABASE_ERROR",
-			Message: "Can not connect to database",
+			Error:   "USERNAME_ERROR",
+			Message: "The username does not exist",
 		}
 		json.NewEncoder(w).Encode(dto)
-		log.Println("Database Error")
+		return
+	}
+	if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		dto := errorDto{
+			Error:   "PASSWORD_ERROR",
+			Message: "The password enterend does not match with the username",
+		}
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+	expireToken := time.Now().Add(time.Hour * 24).Unix()
+
+	claims := customClaims{
+		user.Username,
+		user.Roles,
+		user.ID,
+		jwt.StandardClaims{
+			ExpiresAt: expireToken,
+			Issuer:    "toptal.com",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, _ := token.SignedString([]byte("my-secret"))
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	t := render{
+		Token: signedToken,
+		Roles: user.Roles,
+	}
+	if err := json.NewEncoder(w).Encode(t); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
+		log.Println("Json encoding Error", err)
 		return
 	}
 }
@@ -216,76 +204,65 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		Password: hashedPassword,
 		Roles:    []string{data.UserRole},
 	}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
+	c, session := data.C("user")
+	defer session.Close()
 
-		defer session.Close()
-		c := session.DB("test").C("user")
-		if err := c.Find(bson.M{"username": u.Username}).One(&user); err == nil {
-			w.WriteHeader(http.StatusConflict)
-			dto := errorDto{
-				Error:   "USERNAME_ERROR",
-				Message: "The username " + user.Username + " is already used, please choose another username",
-			}
-			json.NewEncoder(w).Encode(dto)
-			return
+	if err := c.Find(bson.M{"username": u.Username}).One(&user); err == nil {
+		w.WriteHeader(http.StatusConflict)
+		dto := errorDto{
+			Error:   "USERNAME_ERROR",
+			Message: "The username " + user.Username + " is already used, please choose another username",
 		}
-		index := mgo.Index{
-			Key:    []string{"username"},
-			Unique: true,
-		}
-		c.EnsureIndex(index)
-		err := c.Insert(user)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			dto := errorDto{
-				Error:   "INSERT_NOT_POSSIBLE",
-				Message: err.Error(),
-			}
-			json.NewEncoder(w).Encode(dto)
-			log.Println("Error insert user in Database", err)
-			return
-		}
-
-		expireToken := time.Now().Add(time.Hour * 24).Unix()
-
-		claims := customClaims{
-			user.Username,
-			user.Roles,
-			user.ID,
-			jwt.StandardClaims{
-				ExpiresAt: expireToken,
-				Issuer:    "toptal.com",
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		signedToken, _ := token.SignedString([]byte("my-secret"))
-
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		t := render{
-			Token: signedToken,
-			Roles: user.Roles,
-		}
-		if err := json.NewEncoder(w).Encode(t); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			dto := errorDto{
-				Error:   "JSON_ERROR",
-				Message: err.Error(),
-			}
-			json.NewEncoder(w).Encode(dto)
-			return
-		}
-	} else {
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+	index := mgo.Index{
+		Key:    []string{"username"},
+		Unique: true,
+	}
+	c.EnsureIndex(index)
+	err = c.Insert(user)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		dto := errorDto{
-			Error:   "DATABASE_ERROR",
+			Error:   "INSERT_NOT_POSSIBLE",
 			Message: err.Error(),
 		}
 		json.NewEncoder(w).Encode(dto)
-		log.Println("Database Error", err)
+		log.Println("Error insert user in Database", err)
 		return
 	}
+
+	expireToken := time.Now().Add(time.Hour * 24).Unix()
+
+	claims := customClaims{
+		user.Username,
+		user.Roles,
+		user.ID,
+		jwt.StandardClaims{
+			ExpiresAt: expireToken,
+			Issuer:    "toptal.com",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, _ := token.SignedString([]byte("my-secret"))
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	t := render{
+		Token: signedToken,
+		Roles: user.Roles,
+	}
+	if err := json.NewEncoder(w).Encode(t); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+
 }

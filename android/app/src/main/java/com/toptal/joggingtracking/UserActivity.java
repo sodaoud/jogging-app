@@ -24,14 +24,13 @@ import com.toptal.joggingtracking.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
 
 public class UserActivity extends AppCompatActivity {
 
@@ -255,32 +254,7 @@ public class UserActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        HttpUrl.Builder builder = new HttpUrl.Builder()
-                                .scheme("http")
-                                .host(Util.HOST)
-                                .port(Util.PORT)
-                                .addPathSegment(Util.SEGMENT_USER)
-                                .addPathSegment(user.getId());
-                        Request request = new Request.Builder()
-                                .addHeader("Authorization", Util.getAuthToken(UserActivity.this))
-                                .url(builder.build())
-                                .delete()
-                                .build();
-                        client.newCall(request).enqueue(new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
-                                Toast.makeText(UserActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
-                            }
-
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-                                if (response.code() == 200) {
-                                    finish();
-                                } else {
-                                    Toast.makeText(UserActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
-                                }
-                            }
-                        });
+                        new DeleteTask().execute();
                     }
                 }).show();
     }
@@ -291,4 +265,48 @@ public class UserActivity extends AppCompatActivity {
         menu.findItem(R.id.delete).setVisible(user != null);
         return true;
     }
+
+    class DeleteTask extends AsyncTask<Void, Void, Response> {
+
+        DeleteTask() {
+        }
+
+        @Override
+        protected Response doInBackground(Void... params) {
+
+            HttpUrl.Builder builder = new HttpUrl.Builder()
+                    .scheme("http")
+                    .host(Util.HOST)
+                    .port(Util.PORT)
+                    .addPathSegment(Util.SEGMENT_USER)
+                    .addPathSegment(user.getId());
+            Request request = new Request.Builder()
+                    .addHeader("Authorization", Util.getAuthToken(UserActivity.this))
+                    .url(builder.build())
+                    .delete()
+                    .build();
+            try {
+                return client.newCall(request).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(final Response response) {
+            if (response.code() == 200) {
+                finish();
+            } else {
+                Toast.makeText(UserActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
+            }
+            Toast.makeText(UserActivity.this, "Can not delete the entry", Toast.LENGTH_LONG).show();
+
+        }
+
+        @Override
+        protected void onCancelled() {
+        }
+    }
+
 }
