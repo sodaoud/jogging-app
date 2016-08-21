@@ -28,9 +28,15 @@
         <item>Male</item>
         <item>Female</item>
     </string-array>
-    <string-array name="sorting">
+    <string-array name="order">
         <item>Descending</item>
         <item>Ascending</item>
+    </string-array>
+    <string-array name="sort_by">
+        <item>date</item>
+        <item>duration</item>
+        <item>distance</item>
+        <item>speed</item>
     </string-array>
     <string name="title_activity_track">TrackActivity</string>
 </resources>

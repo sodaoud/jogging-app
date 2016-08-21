@@ -26,6 +26,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.TextView;
 
@@ -42,6 +43,7 @@ import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -87,7 +89,7 @@ public class ActivityFragment extends Fragment {
         String end;
         String order;
         String field = "date";
-        String userid;
+        User user = new User();
     }
 
     public static Fragment newInstance(boolean admin) {
@@ -127,7 +129,7 @@ public class ActivityFragment extends Fragment {
                 refresh();
             }
         });
-        mSwipeRefreshLayout = (SwipeRefreshLayout)v.findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -165,7 +167,7 @@ public class ActivityFragment extends Fragment {
         refresh();
     }
 
-    private void refresh(){
+    private void refresh() {
         mSwipeRefreshLayout.setRefreshing(true);
         if (admin)
             getUsers();
@@ -291,13 +293,20 @@ public class ActivityFragment extends Fragment {
 
         @Override
         protected Response doInBackground(Void... params) {
+
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
                     .scheme("http")
                     .host(Util.HOST)
-                    .port(Util.PORT)
-                    .addPathSegment(Util.SEGMENT_TRACK);
-            if (admin)
-                urlBuilder.addPathSegment(Util.ALL);
+                    .port(Util.PORT);
+            if (filter.user.getId() != null) {
+                urlBuilder.addPathSegment(Util.SEGMENT_USER)
+                        .addPathSegment(filter.user.getId())
+                        .addPathSegment(Util.SEGMENT_TRACK);
+            } else {
+                urlBuilder.addPathSegment(Util.SEGMENT_TRACK);
+                if (admin)
+                    urlBuilder.addPathSegment(Util.ALL);
+            }
             urlBuilder
                     .addQueryParameter("sort", filter.order + filter.field)
                     .addQueryParameter("begin", filter.begin)
@@ -478,10 +487,13 @@ public class ActivityFragment extends Fragment {
         private Calendar endCal;
         private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         private RFC3339DateFormat dateFormatws = new RFC3339DateFormat();
+        private AppCompatSpinner sortBy;
         private AppCompatSpinner order;
+        private AppCompatSpinner user;
         private TextView beginDate;
         private TextView endDate;
         private View view;
+        private ArrayList<User> userList;
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -492,6 +504,15 @@ public class ActivityFragment extends Fragment {
             beginDate = (TextView) view.findViewById(R.id.show_begin);
             endDate = (TextView) view.findViewById(R.id.show_end);
             order = (AppCompatSpinner) view.findViewById(R.id.order);
+            sortBy = (AppCompatSpinner) view.findViewById(R.id.sort_by);
+            if (admin) {
+                view.findViewById(R.id.user_container).setVisibility(View.VISIBLE);
+                user = (AppCompatSpinner) view.findViewById(R.id.user);
+                userList = new ArrayList<>(Arrays.asList(users));
+                userList.add(0, new User());
+                user.setAdapter(new ArrayAdapter<>(getActivity(), R.layout.support_simple_spinner_dropdown_item, userList));
+            }
+
             if (filter != null) {
                 order.setSelection(filter.order.equals(Filter.ORDER_DESC) ? 0 : 1);
                 if (filter.begin != null) {
@@ -512,7 +533,23 @@ public class ActivityFragment extends Fragment {
                     }
                     endDate.setText(dateFormat.format(endCal.getTime()));
                 }
-                order.setSelection(filter.order.equals(Filter.ORDER_DESC) ? 0 : 1);
+                switch (filter.field) {
+                    case "date":
+                        sortBy.setSelection(0);
+                        break;
+                    case "duration":
+                        sortBy.setSelection(1);
+                        break;
+                    case "distance":
+                        sortBy.setSelection(2);
+                        break;
+                    case "speed":
+                        sortBy.setSelection(3);
+                        break;
+                }
+                if (admin && filter.user != null) {
+                    user.setSelection(userList.indexOf(filter.user));
+                }
             }
 
 
@@ -533,6 +570,10 @@ public class ActivityFragment extends Fragment {
                                 filter.begin = dateFormatws.format(beginCal.getTime());
                             if (endCal != null)
                                 filter.end = dateFormatws.format(endCal.getTime());
+                            filter.field = sortBy.getSelectedItem().toString();
+                            if (admin)
+                                filter.user = (User) user.getSelectedItem();
+                            mSwipeRefreshLayout.setRefreshing(true);
                             getTracks();
                         }
                     })
@@ -541,6 +582,7 @@ public class ActivityFragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface arg0, int arg1) {
                             filter = new Filter();
+                            mSwipeRefreshLayout.setRefreshing(true);
                             getTracks();
                         }
                     })

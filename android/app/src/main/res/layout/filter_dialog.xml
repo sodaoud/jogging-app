@@ -17,7 +17,7 @@
             android:layout_alignParentLeft="true"
             android:layout_weight=".5"
             android:gravity="center_vertical"
-            android:text="Begin Date"
+            android:text="From"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
 
@@ -43,7 +43,7 @@
             android:layout_alignParentLeft="true"
             android:layout_weight=".5"
             android:gravity="center_vertical"
-            android:text="End Date"
+            android:text="To"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
 
@@ -62,6 +62,29 @@
         android:layout_margin="12dp"
         android:orientation="horizontal">
 
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_weight=".5"
+            android:gravity="center_vertical"
+            android:text="Sort By"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/sort_by"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".5"
+            android:entries="@array/sort_by" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="0dp"
@@ -69,7 +92,7 @@
             android:layout_alignParentLeft="true"
             android:layout_weight=".5"
             android:gravity="center_vertical"
-            android:text="End Date"
+            android:text="Order"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
 
@@ -78,6 +101,32 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight=".5"
-            android:entries="@array/sorting" />
+            android:entries="@array/order" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/user_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_weight=".5"
+            android:gravity="center_vertical"
+            android:text="User"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/user"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".5" />
     </LinearLayout>
 </LinearLayout>

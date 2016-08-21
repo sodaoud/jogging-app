@@ -49,7 +49,11 @@ public class User implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof User && ((User) o).getId().equals(getId())) return true;
+        if (!(o instanceof User)) return false;
+        if (getId() == null && ((User) o).getId() != null) return false;
+        if (getId() != null && ((User) o).getId() == null) return false;
+        if (getId() == null && ((User) o).getId() == null) return true;
+        if (((User) o).getId().equals(getId())) return true;
         return super.equals(o);
     }
 
