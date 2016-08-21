@@ -15,6 +15,7 @@ import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatSpinner;
 import android.support.v7.widget.LinearLayoutManager;
@@ -64,7 +65,6 @@ public class ActivityFragment extends Fragment {
     private Adapter adapter;
     private OkHttpClient client;
     private View noServerView;
-    private View mProgressView;
     private TracksTask mTracksTask;
     private UsersTask mUsersTask;
     private List<Track> tracks;
@@ -72,6 +72,7 @@ public class ActivityFragment extends Fragment {
     private LinearLayoutManager mLayoutManager;
     private Filter filter;
     private FloatingActionButton fab;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     private class Filter {
 
@@ -122,10 +123,17 @@ public class ActivityFragment extends Fragment {
         noServerView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getTracks();
+                showNoServer(false);
+                refresh();
             }
         });
-        mProgressView = v.findViewById(R.id.progress_view);
+        mSwipeRefreshLayout = (SwipeRefreshLayout)v.findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refresh();
+            }
+        });
 
         adapter = new Adapter();
         list.setAdapter(adapter);
@@ -154,6 +162,11 @@ public class ActivityFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        refresh();
+    }
+
+    private void refresh(){
+        mSwipeRefreshLayout.setRefreshing(true);
         if (admin)
             getUsers();
         else
@@ -161,50 +174,24 @@ public class ActivityFragment extends Fragment {
     }
 
     private void getUsers() {
-        showNoServer(false);
         mUsersTask = new UsersTask();
-        showProgress(true);
         mUsersTask.execute((Void) null);
     }
 
     private void getTracks() {
-        showNoServer(false);
         mTracksTask = new TracksTask();
-        showProgress(true);
         mTracksTask.execute((Void) null);
-    }
-
-    private void showProgress(final boolean show) {
-        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-        list.setVisibility(show ? View.GONE : View.VISIBLE);
-        list.animate().setDuration(shortAnimTime).alpha(
-                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                list.setVisibility(show ? View.GONE : View.VISIBLE);
-            }
-        });
-
-        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-        mProgressView.animate().setDuration(shortAnimTime).alpha(
-                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            }
-        });
     }
 
     private void showNoServer(final boolean show) {
         int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-        list.setVisibility(show ? View.GONE : View.VISIBLE);
-        list.animate().setDuration(shortAnimTime).alpha(
+        mSwipeRefreshLayout.setVisibility(show ? View.GONE : View.VISIBLE);
+        mSwipeRefreshLayout.animate().setDuration(shortAnimTime).alpha(
                 show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                list.setVisibility(show ? View.GONE : View.VISIBLE);
+                mSwipeRefreshLayout.setVisibility(show ? View.GONE : View.VISIBLE);
             }
         });
 
@@ -293,7 +280,7 @@ public class ActivityFragment extends Fragment {
         @Override
         protected void onCancelled() {
             mUsersTask = null;
-            showProgress(false);
+            mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -334,7 +321,7 @@ public class ActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(final Response response) {
             mTracksTask = null;
-            showProgress(false);
+            mSwipeRefreshLayout.setRefreshing(false);
             Gson gson = new Gson();
             if (response != null) {
                 String stringBody = null;
@@ -380,7 +367,7 @@ public class ActivityFragment extends Fragment {
         @Override
         protected void onCancelled() {
             mTracksTask = null;
-            showProgress(false);
+            mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
