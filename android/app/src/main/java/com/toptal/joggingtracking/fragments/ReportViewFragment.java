@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.R;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.Track;
 import com.toptal.joggingtracking.util.Util;
 
@@ -27,7 +28,6 @@ import io.gsonfire.util.RFC3339DateFormat;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 
 
 /**
@@ -118,13 +118,13 @@ public class ReportViewFragment extends Fragment {
         return v;
     }
 
-    class TracksTask extends AsyncTask<Void, Void, Response> {
+    class TracksTask extends AsyncTask<Void, Void, HttpUtil> {
 
         TracksTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
                     .scheme("http")
                     .host(Util.HOST)
@@ -139,7 +139,7 @@ public class ReportViewFragment extends Fragment {
                         .url(urlBuilder.build())
                         .get()
                         .build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -149,16 +149,12 @@ public class ReportViewFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mTracksTask = null;
             Gson gson = new Gson();
             if (response != null) {
                 String stringBody = null;
-                try {
-                    stringBody = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                stringBody = response.body().string();
                 if (response.code() == 200) {
                     Type type = new TypeToken<Track[]>() {
                     }.getType();

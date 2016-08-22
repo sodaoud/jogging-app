@@ -170,13 +170,12 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	error := json.NewDecoder(r.Body).Decode(&u)
 	if error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		dto := errorDto{
 			Error:   "JSON_ERROR",
 			Message: error.Error(),
 		}
 		json.NewEncoder(w).Encode(dto)
-		log.Println("Error Unmarshal", error)
 		return
 	}
 	if b, dto := u.validate(); b == false {

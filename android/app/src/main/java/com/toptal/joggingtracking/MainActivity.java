@@ -31,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.fragments.ActivityFragment;
 import com.toptal.joggingtracking.fragments.ReportFragment;
@@ -45,7 +46,6 @@ import java.util.List;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -73,11 +73,6 @@ public class MainActivity extends AppCompatActivity
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        Fragment fragment = ActivityFragment.newInstance(false);
-        shownFragmentTag = String.valueOf(R.id.nav_list);
-        fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
-        navigationView.setCheckedItem(R.id.nav_list);
 
         getAccountOrBackToWelcomeActivity();
 
@@ -139,12 +134,29 @@ public class MainActivity extends AppCompatActivity
         navigationView.getMenu().findItem(R.id.nav_list).setVisible(Util.hasRole(Util.USER));
         navigationView.getMenu().findItem(R.id.nav_chart).setVisible(Util.hasRole(Util.USER));
         navigationView.getMenu().findItem(R.id.nav_params).setVisible(Util.hasRole(Util.USER));
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if (Util.hasRole(Util.USER)) {
+            Fragment fragment = ActivityFragment.newInstance(false);
+            shownFragmentTag = String.valueOf(R.id.nav_list);
+            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            navigationView.setCheckedItem(R.id.nav_list);
+        } else if (Util.hasRole(Util.MANAGER)) {
+            Fragment fragment = UsersFragment.newInstance();
+            shownFragmentTag = String.valueOf(R.id.nav_user_management);
+            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            navigationView.setCheckedItem(R.id.nav_user_management);
+        } else if (Util.hasRole(Util.ADMIN)) {
+            Fragment fragment = ActivityFragment.newInstance(true);
+            shownFragmentTag = String.valueOf(R.id.nav_activity_management);
+            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            navigationView.setCheckedItem(R.id.nav_activity_management);
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        refreshNavView();
         new UserTask().execute();
     }
 
@@ -153,13 +165,13 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    class UserTask extends AsyncTask<Void, Void, Response> {
+    class UserTask extends AsyncTask<Void, Void, HttpUtil> {
 
         UserTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             String token = Util.getAuthToken(MainActivity.this);
             try {
                 HttpUrl.Builder builder;
@@ -174,27 +186,21 @@ public class MainActivity extends AppCompatActivity
                         .addHeader("Authorization", token)
                         .url(builder.build())
                         .get();
-                return client.newCall(requestBuilder.build()).execute();
+                return new HttpUtil(client.newCall(requestBuilder.build()).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             return null;
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             if (response != null) {
                 if (response.code() == 200) {
                     Gson gson = new Gson();
-                    try {
-                        User user = gson.fromJson(response.body().string(), User.class);
-                        Util.setUser(user);
-                        refreshNavView();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    User user = gson.fromJson(response.body().string(), User.class);
+                    Util.setUser(user);
                 } else if (response.code() == 204) {
                     Util.logout(MainActivity.this, new AccountManagerCallback<Boolean>() {
                         @Override
@@ -217,10 +223,12 @@ public class MainActivity extends AppCompatActivity
             } else {
                 Toast.makeText(MainActivity.this, "Can't reach server", Toast.LENGTH_LONG).show();
             }
+            refreshNavView(); // in All cases
         }
 
         @Override
         protected void onCancelled() {
+            refreshNavView();
         }
     }
 

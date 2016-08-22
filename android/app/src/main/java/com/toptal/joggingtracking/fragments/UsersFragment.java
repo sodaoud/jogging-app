@@ -31,6 +31,7 @@ import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.ProfileActivity;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.UserActivity;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
 
@@ -76,7 +77,7 @@ public class UsersFragment extends Fragment {
         client = new OkHttpClient();
         users = new ArrayList<>();
 
-        ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle("User List");
+        ((AppCompatActivity) getActivity()).getSupportActionBar().setTitle("User List");
     }
 
     @Override
@@ -160,13 +161,13 @@ public class UsersFragment extends Fragment {
 
     }
 
-    class UsersTask extends AsyncTask<Void, Void, Response> {
+    class UsersTask extends AsyncTask<Void, Void, HttpUtil> {
 
         UsersTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             HttpUrl url = new HttpUrl.Builder()
                     .scheme("http")
                     .host(Util.HOST)
@@ -180,7 +181,7 @@ public class UsersFragment extends Fragment {
                         .url(url)
                         .get()
                         .build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -190,17 +191,13 @@ public class UsersFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mUsersTask = null;
             mSwipeRefreshLayout.setRefreshing(false);
             Gson gson = new Gson();
             if (response != null) {
                 String stringBody = null;
-                try {
-                    stringBody = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                stringBody = response.body().string();
                 if (response.code() == 200) {
                     users.clear();
                     Type type = new TypeToken<List<User>>() {
@@ -340,7 +337,7 @@ public class UsersFragment extends Fragment {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                       new DeleteTask(user).execute();
+                        new DeleteTask(user).execute();
                     }
                 }).show();
     }

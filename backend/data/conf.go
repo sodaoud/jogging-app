@@ -37,6 +37,14 @@ func CheckConnection() bool {
 	return false
 }
 
+func DB() (*mgo.Database, *mgo.Session) {
+	if CheckConnection() == false {
+		log.Panic("Database Error")
+	}
+	session := Mongo.Copy()
+	return session.DB(database), session
+}
+
 // C return a collection with the given name
 func C(col string) (*mgo.Collection, *mgo.Session) {
 	if CheckConnection() == false {

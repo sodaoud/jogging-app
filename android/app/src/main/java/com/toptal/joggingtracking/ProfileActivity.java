@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.Profile;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
@@ -25,7 +26,6 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 
 public class ProfileActivity extends AppCompatActivity {
@@ -108,13 +108,13 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
 
-    class ProfileTask extends AsyncTask<Void, Void, Response> {
+    class ProfileTask extends AsyncTask<Void, Void, HttpUtil> {
 
         ProfileTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             String token = Util.getAuthToken(ProfileActivity.this);
             try {
                 HttpUrl.Builder builder;
@@ -134,7 +134,7 @@ public class ProfileActivity extends AppCompatActivity {
                         .url(builder.build())
                         .put(body);
                 Request request = requestBuilder.build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -144,22 +144,18 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mProfileTask = null;
             if (response != null) {
                 if (response.code() == 200) {
                     Gson gson = new Gson();
-                    try {
-                        User user = gson.fromJson(response.body().string(), User.class);
-                        Intent i = getIntent();
-                        i.putExtra(ProfileActivity.USER, user);
-                        setResult(RESULT_OK, i);
-                        Toast.makeText(ProfileActivity.this, "The profile has been successfully updated", Toast.LENGTH_LONG).show();
-                        finish();
-                        return;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    User user = gson.fromJson(response.body().string(), User.class);
+                    Intent i = getIntent();
+                    i.putExtra(ProfileActivity.USER, user);
+                    setResult(RESULT_OK, i);
+                    Toast.makeText(ProfileActivity.this, "The profile has been successfully updated", Toast.LENGTH_LONG).show();
+                    finish();
+                    return;
                 }
             }
             Toast.makeText(ProfileActivity.this, "An error happened please retry later", Toast.LENGTH_LONG).show();

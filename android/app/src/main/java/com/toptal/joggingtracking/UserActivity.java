@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.toptal.joggingtracking.datatype.ErrorUtil;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.datatype.UserDTO;
 import com.toptal.joggingtracking.util.Util;
@@ -173,13 +174,13 @@ public class UserActivity extends AppCompatActivity {
         return true;
     }
 
-    class UserTask extends AsyncTask<Void, Void, Response> {
+    class UserTask extends AsyncTask<Void, Void, HttpUtil> {
 
         UserTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             String token = Util.getAuthToken(UserActivity.this);
             try {
                 HttpUrl.Builder builder = new HttpUrl.Builder()
@@ -200,7 +201,7 @@ public class UserActivity extends AppCompatActivity {
                 else
                     requestBuilder.post(body);
                 Request request = requestBuilder.build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -210,7 +211,7 @@ public class UserActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mUserTask = null;
             if (response != null) {
                 if (response.code() == 200 || response.code() == 201) {
@@ -218,21 +219,16 @@ public class UserActivity extends AppCompatActivity {
                     finish();
                 } else {
                     ErrorUtil err = null;
-                    try {
-                        err = ErrorUtil.getFromString(response.body().string());
-                        switch (err.getError()) {
-                            case "USERNAME_ERROR":
-                                mUsername.setError(err.getMessage());
-                                break;
-                            case "PASSWORD_ERROR":
-                                mPassword.setError(err.getMessage());
-                                break;
-                            default:
-                                Toast.makeText(UserActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        Toast.makeText(UserActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
+                    err = ErrorUtil.getFromString(response.body().string());
+                    switch (err.getError()) {
+                        case "USERNAME_ERROR":
+                            mUsername.setError(err.getMessage());
+                            break;
+                        case "PASSWORD_ERROR":
+                            mPassword.setError(err.getMessage());
+                            break;
+                        default:
+                            Toast.makeText(UserActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
                     }
                 }
             } else {

@@ -186,9 +186,8 @@ func createTrack(w http.ResponseWriter, r *http.Request) {
 	var track data.Track
 	error := json.NewDecoder(r.Body).Decode(&track)
 	if error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(error.Error()))
-		log.Println("Error Unmarshal", error)
 		return
 	}
 	if b, mes := track.Validate(); !b {

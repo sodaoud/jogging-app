@@ -17,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.toptal.joggingtracking.datatype.ErrorUtil;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.TokenUtil;
 import com.toptal.joggingtracking.util.Util;
 
@@ -29,7 +30,6 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 
 /**
@@ -154,7 +154,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     }
 
-    public class UserLoginTask extends AsyncTask<Void, Void, Response> {
+    public class UserLoginTask extends AsyncTask<Void, Void, HttpUtil> {
 
         private final String mUsername;
         private final String mPassword;
@@ -165,7 +165,7 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             JSONObject obj = new JSONObject();
             try {
                 obj.put("username", mUsername);
@@ -175,7 +175,7 @@ public class SignUpActivity extends AppCompatActivity {
                         .url(Util.URL_SIGN_UP)
                         .post(body)
                         .build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (JSONException | IOException e) {
                 e.printStackTrace();
@@ -185,18 +185,13 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mAuthTask = null;
             showProgress(false);
 
             if (response != null) {
                 String bodyString = null;
-                try {
-                    bodyString = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Toast.makeText(SignUpActivity.this, "An Error happened, please try again later", Toast.LENGTH_LONG).show();
-                }
+                bodyString = response.body().string();
                 if (response.code() == 201) {
                     TokenUtil tu = TokenUtil.getFromString(bodyString);
                     Bundle mResultBundle = Util.finishLogin(SignUpActivity.this

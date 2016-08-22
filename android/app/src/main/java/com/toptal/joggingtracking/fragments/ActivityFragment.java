@@ -40,6 +40,7 @@ import com.google.gson.reflect.TypeToken;
 import com.toptal.joggingtracking.R;
 import com.toptal.joggingtracking.TrackActivity;
 import com.toptal.joggingtracking.WelcomeActivity;
+import com.toptal.joggingtracking.datatype.HttpUtil;
 import com.toptal.joggingtracking.datatype.Track;
 import com.toptal.joggingtracking.datatype.User;
 import com.toptal.joggingtracking.util.Util;
@@ -216,13 +217,13 @@ public class ActivityFragment extends Fragment {
 
     }
 
-    class UsersTask extends AsyncTask<Void, Void, Response> {
+    class UsersTask extends AsyncTask<Void, Void, HttpUtil> {
 
         UsersTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
             HttpUrl url = new HttpUrl.Builder()
                     .scheme("http")
                     .host(Util.HOST)
@@ -236,7 +237,7 @@ public class ActivityFragment extends Fragment {
                         .url(url)
                         .get()
                         .build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -246,16 +247,12 @@ public class ActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mUsersTask = null;
             Gson gson = new Gson();
             if (response != null) {
                 String stringBody = null;
-                try {
                     stringBody = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
                 if (response.code() == 200) {
                     Type type = new TypeToken<User[]>() {
                     }.getType();
@@ -294,13 +291,13 @@ public class ActivityFragment extends Fragment {
         }
     }
 
-    class TracksTask extends AsyncTask<Void, Void, Response> {
+    class TracksTask extends AsyncTask<Void, Void, HttpUtil> {
 
         TracksTask() {
         }
 
         @Override
-        protected Response doInBackground(Void... params) {
+        protected HttpUtil doInBackground(Void... params) {
 
             HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
                     .scheme("http")
@@ -326,7 +323,7 @@ public class ActivityFragment extends Fragment {
                         .url(urlBuilder.build())
                         .get()
                         .build();
-                return client.newCall(request).execute();
+                return new HttpUtil(client.newCall(request).execute());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -336,17 +333,13 @@ public class ActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(final Response response) {
+        protected void onPostExecute(final HttpUtil response) {
             mTracksTask = null;
             mSwipeRefreshLayout.setRefreshing(false);
             Gson gson = new Gson();
             if (response != null) {
                 String stringBody = null;
-                try {
-                    stringBody = response.body().string();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                stringBody = response.body().string();
                 if (response.code() == 200) {
                     tracks.clear();
                     Type type = new TypeToken<List<Track>>() {
