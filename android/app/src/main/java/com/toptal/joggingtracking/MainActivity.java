@@ -126,6 +126,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
         client = new OkHttpClient();
+        new UserTask().execute();
     }
 
     private void refreshNavView() {
@@ -135,21 +136,14 @@ public class MainActivity extends AppCompatActivity
         navigationView.getMenu().findItem(R.id.nav_chart).setVisible(Util.hasRole(Util.USER));
         navigationView.getMenu().findItem(R.id.nav_params).setVisible(Util.hasRole(Util.USER));
 
-        FragmentManager fragmentManager = getSupportFragmentManager();
         if (Util.hasRole(Util.USER)) {
-            Fragment fragment = ActivityFragment.newInstance(false);
-            shownFragmentTag = String.valueOf(R.id.nav_list);
-            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            setFragment(R.id.nav_list);
             navigationView.setCheckedItem(R.id.nav_list);
         } else if (Util.hasRole(Util.MANAGER)) {
-            Fragment fragment = UsersFragment.newInstance();
-            shownFragmentTag = String.valueOf(R.id.nav_user_management);
-            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            setFragment(R.id.nav_user_management);
             navigationView.setCheckedItem(R.id.nav_user_management);
         } else if (Util.hasRole(Util.ADMIN)) {
-            Fragment fragment = ActivityFragment.newInstance(true);
-            shownFragmentTag = String.valueOf(R.id.nav_activity_management);
-            fragmentManager.beginTransaction().add(R.id.container, fragment, shownFragmentTag).commit();
+            setFragment(R.id.nav_activity_management);
             navigationView.setCheckedItem(R.id.nav_activity_management);
         }
     }
@@ -157,7 +151,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        new UserTask().execute();
     }
 
     @Override
@@ -287,6 +280,11 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
+        return setFragment(id);
+
+    }
+
+    private boolean setFragment(int id){
         String tag = String.valueOf(id);
         FragmentManager fragmentManager = getSupportFragmentManager();
         Fragment fragment = fragmentManager.findFragmentByTag(tag);

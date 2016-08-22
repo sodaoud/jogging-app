@@ -52,6 +52,7 @@
         android:layout_gravity="bottom|right"
         android:layout_margin="16dp"
         android:src="@drawable/ic_add"
+        app:layout_behavior="com.toptal.joggingtracking.util.ScrollAwareFABBehavior"
         app:backgroundTint="@color/colorPrimaryDark" />
 
 </android.support.design.widget.CoordinatorLayout>
