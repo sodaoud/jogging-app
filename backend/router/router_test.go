@@ -22,9 +22,11 @@ var (
 	signupURL    string
 	loginURL     string
 	trackURL     string
+	allTrackURL  string
 	adminToken   string
 	managerToken string
 	userToken    string
+	trackID      string
 )
 
 func init() {
@@ -40,6 +42,7 @@ func init() {
 	signupURL = fmt.Sprintf("%s/signup", server.URL)
 	loginURL = fmt.Sprintf("%s/login", server.URL)
 	trackURL = fmt.Sprintf("%s/track", server.URL)
+	allTrackURL = fmt.Sprintf("%s/track/all", server.URL)
 
 }
 
@@ -109,6 +112,14 @@ type token struct {
 	Token string   `json:"token"`
 	Roles []string `json:"roles"`
 }
+type Track struct {
+	ID       string  `json:"id" bson:"_id,omitempty"`
+	Date     string  `json:"date"`
+	Distance int     `json:"distance"` // distance in meters
+	Duration int     `json:"duration"` // time in seconds
+	Speed    float32 `json:"speed"`
+	UserID   string  `json:"userid"`
+}
 
 func TestLogin(t *testing.T) {
 	userJSON := `{"username": "admin", "password": "admin"}`
@@ -177,6 +188,28 @@ func TestAuth(t *testing.T) {
 	if res.StatusCode != 200 {
 		t.Errorf("200 expected, get %d", res.StatusCode)
 	}
+
+	// forbidden for simple user
+	request, err = http.NewRequest("GET", allTrackURL, reader)
+	request.Header.Add("Authorization", userToken)
+	res, err = http.DefaultClient.Do(request)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != 403 {
+		t.Errorf("403 expected, get %d", res.StatusCode)
+	}
+
+	// allowed for admin
+	request, err = http.NewRequest("GET", allTrackURL, reader)
+	request.Header.Add("Authorization", adminToken)
+	res, err = http.DefaultClient.Do(request)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("200 expected, get %d", res.StatusCode)
+	}
 }
 
 func TestCreateTrack(t *testing.T) {
@@ -219,7 +252,7 @@ func TestCreateTrack(t *testing.T) {
 		t.Errorf("expected 422: %d", res.StatusCode)
 	}
 
-	// not valid entery => 422
+	// Create another track to save its id
 	trackJSON = `{"date":"2016-08-21T00:00:00+01:00","distance":4500,"duration":2700}`
 	reader = strings.NewReader(trackJSON)
 	request, err = http.NewRequest("POST", trackURL, reader)
@@ -231,4 +264,36 @@ func TestCreateTrack(t *testing.T) {
 	if res.StatusCode != 201 {
 		t.Errorf("expected 201: %d", res.StatusCode)
 	}
+	track := Track{}
+	err = json.NewDecoder(res.Body).Decode(&track)
+	if err != nil {
+		t.Error(err)
+	}
+	trackID = track.ID
+	if trackID == "" {
+		t.Error("ID should not be nil or empty")
+	}
+}
+
+func TestGetTrack(t *testing.T) {
+	request, err := http.NewRequest("GET", trackURL, reader)
+	request.Header.Add("Authorization", userToken)
+	res, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("200 expected, get %d", res.StatusCode)
+	}
+
+	request, err = http.NewRequest("GET", trackURL, reader)
+	request.Header.Add("Authorization", userToken)
+	res, err = http.DefaultClient.Do(request)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != 200 {
+		t.Errorf("200 expected, get %d", res.StatusCode)
+	}
+
 }

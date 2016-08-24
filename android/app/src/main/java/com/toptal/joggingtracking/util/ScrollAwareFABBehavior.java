@@ -5,16 +5,16 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPropertyAnimatorListener;
-import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 
 /**
  * Created by sofiane on 28/12/15.
  */
 public class ScrollAwareFABBehavior extends FloatingActionButton.Behavior {
-    private static final Interpolator INTERPOLATOR = new FastOutSlowInInterpolator();
+    private static final Interpolator INTERPOLATOR = new AccelerateDecelerateInterpolator();
     private boolean mIsAnimatingOut = false;
 
     public ScrollAwareFABBehavior(Context context, AttributeSet attrs) {
