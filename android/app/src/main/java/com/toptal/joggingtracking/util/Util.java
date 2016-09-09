@@ -43,7 +43,7 @@ import okhttp3.ResponseBody;
 
 public class Util {
 
-    public static final String HOST = "192.168.1.34";
+    public static final String HOST = "192.168.3.32";
     public static final int PORT = 8080;
     public static final String SEGMENT_LOGIN = "login";
     public static final String SEGMENT_TRACK = "track";
