@@ -329,6 +329,7 @@ public class ActivityFragment extends Fragment {
                 e.printStackTrace();
             }
 
+
             return null;
         }
 
