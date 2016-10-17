@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking;
+package io.github.sodaoud.joggingapp;
 
 import android.Manifest;
 import android.accounts.Account;
@@ -31,18 +31,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.datatype.HttpUtil;
-import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.fragments.ActivityFragment;
-import com.toptal.joggingtracking.fragments.ReportFragment;
-import com.toptal.joggingtracking.fragments.UsersFragment;
-import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.github.sodaoud.joggingapp.datatype.HttpUtil;
+import io.github.sodaoud.joggingapp.datatype.User;
+import io.github.sodaoud.joggingapp.fragments.ActivityFragment;
+import io.github.sodaoud.joggingapp.fragments.ReportFragment;
+import io.github.sodaoud.joggingapp.fragments.UsersFragment;
+import io.github.sodaoud.joggingapp.util.Util;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

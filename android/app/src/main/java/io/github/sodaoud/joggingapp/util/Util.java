@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.util;
+package io.github.sodaoud.joggingapp.util;
 
 import android.Manifest;
 import android.accounts.Account;
@@ -16,9 +16,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.datatype.ErrorUtil;
-import com.toptal.joggingtracking.datatype.TokenUtil;
-import com.toptal.joggingtracking.datatype.User;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +25,9 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import io.github.sodaoud.joggingapp.datatype.ErrorUtil;
+import io.github.sodaoud.joggingapp.datatype.TokenUtil;
+import io.github.sodaoud.joggingapp.datatype.User;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;

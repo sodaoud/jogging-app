@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.util;
+package io.github.sodaoud.joggingapp.util;
 
 import android.content.Context;
 import android.support.design.widget.CoordinatorLayout;

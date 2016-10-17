@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.auth;
+package io.github.sodaoud.joggingapp.auth;
 
 import android.app.Service;
 import android.content.Intent;

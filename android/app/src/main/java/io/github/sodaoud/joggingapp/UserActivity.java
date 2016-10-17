@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking;
+package io.github.sodaoud.joggingapp;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,11 +16,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.datatype.ErrorUtil;
-import com.toptal.joggingtracking.datatype.HttpUtil;
-import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.datatype.UserDTO;
-import com.toptal.joggingtracking.util.Util;
+import io.github.sodaoud.joggingapp.datatype.ErrorUtil;
+import io.github.sodaoud.joggingapp.datatype.HttpUtil;
+import io.github.sodaoud.joggingapp.datatype.User;
+import io.github.sodaoud.joggingapp.datatype.UserDTO;
+import io.github.sodaoud.joggingapp.util.Util;
 
 import java.io.IOException;
 import java.util.ArrayList;

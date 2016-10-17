@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.fragments;
+package io.github.sodaoud.joggingapp.fragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,15 +15,15 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.toptal.joggingtracking.R;
-import com.toptal.joggingtracking.datatype.HttpUtil;
-import com.toptal.joggingtracking.datatype.Track;
-import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Date;
 
+import io.github.sodaoud.joggingapp.R;
+import io.github.sodaoud.joggingapp.datatype.HttpUtil;
+import io.github.sodaoud.joggingapp.datatype.Track;
+import io.github.sodaoud.joggingapp.util.Util;
 import io.gsonfire.util.RFC3339DateFormat;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;

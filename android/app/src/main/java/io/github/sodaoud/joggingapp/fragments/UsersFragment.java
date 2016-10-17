@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.fragments;
+package io.github.sodaoud.joggingapp.fragments;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -28,12 +28,6 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.toptal.joggingtracking.ProfileActivity;
-import com.toptal.joggingtracking.R;
-import com.toptal.joggingtracking.UserActivity;
-import com.toptal.joggingtracking.datatype.HttpUtil;
-import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -41,6 +35,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.github.sodaoud.joggingapp.ProfileActivity;
+import io.github.sodaoud.joggingapp.R;
+import io.github.sodaoud.joggingapp.UserActivity;
+import io.github.sodaoud.joggingapp.datatype.HttpUtil;
+import io.github.sodaoud.joggingapp.datatype.User;
+import io.github.sodaoud.joggingapp.util.Util;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

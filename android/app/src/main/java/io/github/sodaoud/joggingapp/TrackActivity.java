@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking;
+package io.github.sodaoud.joggingapp;
 
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
@@ -19,9 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.toptal.joggingtracking.datatype.Track;
-import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.util.Util;
+import io.github.sodaoud.joggingapp.datatype.Track;
+import io.github.sodaoud.joggingapp.datatype.User;
+import io.github.sodaoud.joggingapp.util.Util;
 
 import java.io.IOException;
 import java.util.Calendar;

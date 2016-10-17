@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.datatype;
+package io.github.sodaoud.joggingapp.datatype;
 
 import java.io.Serializable;
 

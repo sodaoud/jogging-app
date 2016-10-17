@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.fragments;
+package io.github.sodaoud.joggingapp.fragments;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,11 +12,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.toptal.joggingtracking.R;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+
+import io.github.sodaoud.joggingapp.R;
 
 /**
  * Created by sofiane on 8/16/16.

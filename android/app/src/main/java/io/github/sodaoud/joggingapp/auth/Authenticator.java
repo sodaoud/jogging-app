@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.auth;
+package io.github.sodaoud.joggingapp.auth;
 
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.toptal.joggingtracking.LoginActivity;
+import io.github.sodaoud.joggingapp.LoginActivity;
 
 import static android.content.ContentValues.TAG;
 

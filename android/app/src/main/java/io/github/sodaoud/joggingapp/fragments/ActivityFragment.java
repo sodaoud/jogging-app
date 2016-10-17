@@ -1,4 +1,4 @@
-package com.toptal.joggingtracking.fragments;
+package io.github.sodaoud.joggingapp.fragments;
 
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
@@ -37,13 +37,6 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.toptal.joggingtracking.R;
-import com.toptal.joggingtracking.TrackActivity;
-import com.toptal.joggingtracking.WelcomeActivity;
-import com.toptal.joggingtracking.datatype.HttpUtil;
-import com.toptal.joggingtracking.datatype.Track;
-import com.toptal.joggingtracking.datatype.User;
-import com.toptal.joggingtracking.util.Util;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -55,6 +48,13 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import io.github.sodaoud.joggingapp.R;
+import io.github.sodaoud.joggingapp.TrackActivity;
+import io.github.sodaoud.joggingapp.WelcomeActivity;
+import io.github.sodaoud.joggingapp.datatype.HttpUtil;
+import io.github.sodaoud.joggingapp.datatype.Track;
+import io.github.sodaoud.joggingapp.datatype.User;
+import io.github.sodaoud.joggingapp.util.Util;
 import io.gsonfire.util.RFC3339DateFormat;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
