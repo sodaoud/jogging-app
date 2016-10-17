@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/my_activity"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_list"
+            android:icon="@drawable/ic_list"
+            android:title="My Activity" />
+        <item
+            android:id="@+id/nav_chart"
+            android:icon="@drawable/ic_insert_chart"
+            android:title="@string/show_report" />
+    </group>
+
+
+    <group android:id="@+id/settings">
+
+        <item
+            android:id="@+id/nav_params"
+            android:icon="@drawable/ic_account_circle"
+            android:title="My profile" />
+    </group>
+
+    <item
+        android:id="@+id/sub_menu_admin"
+        android:title="Admin area">
+        <menu>
+            <group
+                android:id="@+id/admin_area"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/nav_user_management"
+                    android:icon="@drawable/ic_people"
+                    android:title="Users Management"
+                    android:visible="false" />
+                <item
+                    android:id="@+id/nav_activity_management"
+                    android:icon="@drawable/ic_settings"
+                    android:title="Activity Management"
+                    android:visible="false" />
+            </group>
+        </menu>
+    </item>
+</menu>

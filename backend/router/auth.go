@@ -28,85 +28,128 @@ type render struct {
 	Roles []string `json:"roles"`
 }
 
-type userDto struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func (u *userDto) validate() (bool, string) {
-	if len([]rune(u.Username)) < 6 {
-		return false, "Username must contain at least 6 characters"
-	}
-	if len([]rune(u.Password)) < 6 {
-		return false, "Password must contain at least 6 characters"
-	}
-	return true, ""
-}
-
 func login(w http.ResponseWriter, r *http.Request) {
 	var u userDto
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	error := json.NewDecoder(r.Body).Decode(&u)
 	if error != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Unmarshal Error"))
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: error.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
+	c, session := data.C("user")
+	defer session.Close()
 
-		defer session.Close()
-		c := session.DB("test").C("user")
-		var user data.User
-		err := c.Find(bson.M{"username": u.Username}).One(&user)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Wrong username"))
-			return
+	var user data.User
+	err := c.Find(bson.M{"username": u.Username}).One(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		dto := errorDto{
+			Error:   "USERNAME_ERROR",
+			Message: "The username does not exist",
 		}
-		if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Wrong password"))
-			return
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+	if bcrypt.CompareHashAndPassword(user.Password, []byte(u.Password)) != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		dto := errorDto{
+			Error:   "PASSWORD_ERROR",
+			Message: "The password enterend does not match with the username",
 		}
-		expireToken := time.Now().Add(time.Hour * 24).Unix()
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+	expireToken := time.Now().Add(time.Hour * 24).Unix()
 
-		claims := customClaims{
-			user.Username,
-			user.Roles,
-			user.ID,
-			jwt.StandardClaims{
-				ExpiresAt: expireToken,
-				Issuer:    "toptal.com",
-			},
-		}
+	claims := customClaims{
+		user.Username,
+		user.Roles,
+		user.ID,
+		jwt.StandardClaims{
+			ExpiresAt: expireToken,
+			Issuer:    "toptal.com",
+		},
+	}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-		signedToken, _ := token.SignedString([]byte("my-secret"))
+	signedToken, _ := token.SignedString([]byte("my-secret"))
 
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		t := render{
-			Token: signedToken,
-			Roles: user.Roles,
-		}
-		if err := json.NewEncoder(w).Encode(t); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			log.Println("Json encoding Error", err)
-			return
-		}
-	} else {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	t := render{
+		Token: signedToken,
+		Roles: user.Roles,
+	}
+	if err := json.NewEncoder(w).Encode(t); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Database Error"))
-		log.Println("Database Error")
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
+		log.Println("Json encoding Error", err)
 		return
 	}
+}
+
+func manager(protectedPage http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+		roles := context.Get(req, "roles").([]string)
+		b := false
+		for _, role := range roles {
+			if role == data.ManagerRole || role == data.AdminRole {
+				b = true
+			}
+		}
+		if b {
+			protectedPage(res, req)
+		} else {
+			res.WriteHeader(http.StatusForbidden)
+		}
+	})
+}
+
+func admin(protectedPage http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+
+		roles := context.Get(req, "roles").([]string)
+		if hasRoleAdmin(roles) {
+			protectedPage(res, req)
+		} else {
+			res.WriteHeader(http.StatusForbidden)
+		}
+	})
+}
+
+func hasRoleAdmin(roles []string) bool {
+	b := false
+	for _, role := range roles {
+		if role == data.AdminRole {
+			b = true
+		}
+	}
+	return b
+}
+
+func hasRoleManager(roles []string) bool {
+	b := false
+	for _, role := range roles {
+		if role == data.ManagerRole {
+			b = true
+		}
+	}
+	return b
 }
 
 func auth(protectedPage http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		req.Header.Get("Authorization")
 
 		if token, err := request.ParseFromRequestWithClaims(req, request.OAuth2Extractor, &customClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("my-secret"), nil
@@ -124,16 +167,20 @@ func auth(protectedPage http.HandlerFunc) http.HandlerFunc {
 
 func signup(w http.ResponseWriter, r *http.Request) {
 	var u userDto
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	error := json.NewDecoder(r.Body).Decode(&u)
 	if error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(error.Error()))
-		log.Println("Error Unmarshal", error)
+		w.WriteHeader(http.StatusBadRequest)
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: error.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
-	if b, mes := u.validate(); b == false {
+	if b, dto := u.validate(); b == false {
 		w.WriteHeader(422)
-		w.Write([]byte(mes))
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
 	password := []byte(u.Password)
@@ -142,40 +189,79 @@ func signup(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(error.Error()))
+		dto := errorDto{
+			Error:   "BCRYPT_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
 		log.Println("Error can not bcrypt password", error)
 		return
 	}
 	user := data.User{
+		ID:       bson.NewObjectId(),
 		Username: u.Username,
 		Password: hashedPassword,
 		Roles:    []string{data.UserRole},
 	}
-	if data.CheckConnection() {
-		session := data.Mongo.Copy()
+	c, session := data.C("user")
+	defer session.Close()
 
-		defer session.Close()
-		c := session.DB("test").C("user")
-		index := mgo.Index{
-			Key:    []string{"username"},
-			Unique: true,
+	if err := c.Find(bson.M{"username": u.Username}).One(&user); err == nil {
+		w.WriteHeader(http.StatusConflict)
+		dto := errorDto{
+			Error:   "USERNAME_ERROR",
+			Message: "The username " + user.Username + " is already used, please choose another username",
 		}
-		if err := c.EnsureIndex(index); err != nil { // TODO test if this works
-			w.WriteHeader(http.StatusConflict)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		err := c.Insert(user)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			log.Println("Error insert user in Database", err)
-			return
-		}
-	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		log.Println("Database Error", err)
+		json.NewEncoder(w).Encode(dto)
 		return
 	}
+	index := mgo.Index{
+		Key:    []string{"username"},
+		Unique: true,
+	}
+	c.EnsureIndex(index)
+	err = c.Insert(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		dto := errorDto{
+			Error:   "INSERT_NOT_POSSIBLE",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
+		log.Println("Error insert user in Database", err)
+		return
+	}
+
+	expireToken := time.Now().Add(time.Hour * 24).Unix()
+
+	claims := customClaims{
+		user.Username,
+		user.Roles,
+		user.ID,
+		jwt.StandardClaims{
+			ExpiresAt: expireToken,
+			Issuer:    "toptal.com",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, _ := token.SignedString([]byte("my-secret"))
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	t := render{
+		Token: signedToken,
+		Roles: user.Roles,
+	}
+	if err := json.NewEncoder(w).Encode(t); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		dto := errorDto{
+			Error:   "JSON_ERROR",
+			Message: err.Error(),
+		}
+		json.NewEncoder(w).Encode(dto)
+		return
+	}
+
 }
