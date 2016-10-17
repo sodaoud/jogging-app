@@ -1,4 +1,4 @@
-# Joggign Application
+# Jogging Application
 
 The application is a test project for Go language, This is my very first Go application backend with an Android Application
 
